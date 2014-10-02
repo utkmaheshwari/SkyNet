@@ -7,141 +7,21 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity" >
+    tools:context=".MainActivity" 
+    android:weightSum="2">
 
-    <LinearLayout
+    <Button
+        android:id="@+id/btServer"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="3" >
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:text="Server" />
 
-        <TextView
-            android:id="@+id/tvServerIpAddress"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:text="Server IP"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <TextView
-            android:id="@+id/tvServerIP"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0.0.0.0"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-    </LinearLayout>
-
-    <LinearLayout
+    <Button
+        android:id="@+id/btClient"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="3" >
-
-        <TextView
-            android:id="@+id/tvSelfIPAddress"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:text="Self IP"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <TextView
-            android:id="@+id/tvSelfIP"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0.0.0.0"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-    </LinearLayout>
-
-    <EditText
-        android:id="@+id/etPath"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="file path" />
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="5" >
-
-        <EditText
-            android:id="@+id/etIPAddress"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ems="10"
-            android:hint="IP Address" />
-
-        <TextView
-            android:id="@+id/tvSend"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:text="send"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/tvRefresh"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Refresh"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="5" >
-
-        <TextView
-            android:id="@+id/tvBack"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:text="back"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <TextView
-            android:id="@+id/tvShareFolder"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Share folders"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="2" >
-
-        <ListView
-            android:id="@+id/lvMyFolders"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_weight="1"
-            android:choiceMode="multipleChoice"
-            android:drawSelectorOnTop="false"
-            android:fastScrollEnabled="true"
-            android:smoothScrollbar="true" >
-        </ListView>
-
-        <ListView
-            android:id="@+id/lvUrFolders"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_weight="1"
-            android:choiceMode="multipleChoice"
-            android:drawSelectorOnTop="false"
-            android:fastScrollEnabled="true"
-            android:smoothScrollbar="true" >
-        </ListView>
-    </LinearLayout>
-
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:text="Client" />
+   
 </LinearLayout>

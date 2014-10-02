@@ -1,0 +1,339 @@
+package com.example.skynet;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Color;
+import android.net.DhcpInfo;
+import android.net.wifi.WifiManager;
+import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+@SuppressLint("DefaultLocale")
+public class Server extends Activity implements OnClickListener,
+		OnItemClickListener, OnItemLongClickListener {
+
+	WifiManager wifiManager;
+	Socket clientSocket = null;
+	TextView tvServerIP, tvSelfIP;
+	Button btUpload, btRefresh, btBack;
+
+	public static final String TAG = "wifi";
+	public static final int PORTNUMBER = 9999;
+	public String response, request;
+	public String pathString = "";
+
+	ListView lvMyFolders;
+	ArrayList<String> folderNameList, encodedList, selectedEncodedList;
+	ArrayAdapter<String> arrayAdapter;
+	File tempFolder;
+	File[] tempFolders;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.server_layout);
+		new Thread(new ListenForClientConnection()).start();
+		UIInitialization();
+		wifiPeriferalInitialization();
+	}
+
+	public void wifiPeriferalInitialization() {
+		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		final DhcpInfo dhcp = wifiManager.getDhcpInfo();
+
+		tvServerIP
+				.setText(Protocols.convertIntIPtoStringIP(dhcp.serverAddress));
+		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+
+		Toast.makeText(
+				getApplicationContext(),
+				Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
+						+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
+						+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
+						+ ":"
+						+ Protocols.convertIntIPtoStringIP(dhcp.ipAddress),
+				Toast.LENGTH_SHORT).show();
+	}
+
+	public void UIInitialization() {
+		tvServerIP = (TextView) findViewById(R.id.tvServerIP);
+		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
+
+		btRefresh = (Button) findViewById(R.id.btRefresh);
+		btRefresh.setOnClickListener(this);
+
+		btUpload = (Button) findViewById(R.id.btUpload);
+		btUpload.setOnClickListener(this);
+
+		btBack = (Button) findViewById(R.id.btBack);
+		btBack.setOnClickListener(this);
+
+		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
+		lvMyFolders.setOnItemClickListener(this);
+		lvMyFolders.setOnItemLongClickListener(this);
+		folderNameList = new ArrayList<String>();
+
+		encodedList = new ArrayList<String>();
+		selectedEncodedList = new ArrayList<String>();
+
+		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
+				android.R.layout.simple_list_item_1, folderNameList);
+		lvMyFolders.setAdapter(arrayAdapter);
+
+		if (Environment.MEDIA_MOUNTED.equals(Environment
+				.getExternalStorageState())) {
+			tempFolder = Environment.getExternalStorageDirectory();
+			tempFolders = tempFolder.listFiles();
+
+			folderNameList.clear();
+			encodedList.clear();
+			if (!tempFolders.equals(null)) {
+				for (File f : tempFolders) {
+					if (!f.equals(null)) {
+						encodedList.add(f.length() + f.getAbsolutePath());
+
+						folderNameList.add(f.getName());
+					}
+				}
+			}
+		} else {
+			encodedList.clear();
+
+			folderNameList.clear();
+			folderNameList.add("unmounted");
+		}
+		arrayAdapter.notifyDataSetChanged();
+	}
+
+	@Override
+	public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2,
+			long arg3) {
+		// TODO Auto-generated method stub
+		if (selectedEncodedList.contains(encodedList.get(arg2))) {
+			arg1.setBackgroundColor(Color.TRANSPARENT);
+			selectedEncodedList.remove(encodedList.get(arg2));
+		} else {
+			arg1.setBackgroundColor(Color.BLUE);
+			selectedEncodedList.add(encodedList.get(arg2));
+		}
+		arrayAdapter.notifyDataSetChanged();
+		Toast.makeText(getApplicationContext(), selectedEncodedList.toString(),
+				Toast.LENGTH_SHORT).show();
+		return true;
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int position,
+			long arg3) {
+		// TODO Auto-generated method stub
+
+		tempFolder = new File(Protocols.getFilePathFromEncode(encodedList
+				.get(position)));
+		if (tempFolder.isFile()) {
+			Toast.makeText(getApplicationContext(), "is file",
+					Toast.LENGTH_SHORT).show();
+		} else {
+			tempFolders = tempFolder.listFiles();
+			encodedList.clear();
+
+			folderNameList.clear();
+			if (!tempFolders.equals(null)) {
+				for (File f : tempFolders) {
+					if (!f.equals(null)) {
+						encodedList.add(f.length() + f.getAbsolutePath());
+						folderNameList.add(f.getName());
+					}
+				}
+			}
+			arrayAdapter.notifyDataSetChanged();
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		if (v.getId() == R.id.btBack) {
+			// TODO Auto-generated method stub
+			if (tempFolder.getAbsolutePath().equals("/storage")) {
+				Toast.makeText(getApplicationContext(), ".......",
+						Toast.LENGTH_SHORT).show();
+				return;
+			}
+			String parent = tempFolder.getParent().toString();
+			tempFolder = new File(parent);
+			tempFolders = tempFolder.listFiles();
+
+			folderNameList.clear();
+			encodedList.clear();
+			if (!tempFolders.equals(null)) {
+				for (File f : tempFolders) {
+					if (!f.equals(null)) {
+						encodedList.add(f.length() + f.getAbsolutePath());
+
+						folderNameList.add(f.getName());
+					}
+				}
+			}
+			arrayAdapter.notifyDataSetChanged();
+			lvMyFolders.setBackgroundColor(Color.TRANSPARENT);
+		}
+
+		else if (v.getId() == R.id.btRefresh) {
+			// TODO Auto-generated method stub
+			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
+			tvServerIP.setText(Protocols
+					.convertIntIPtoStringIP(dhcp.serverAddress));
+			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+			displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
+					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
+					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
+					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+			encodedList.clear();
+			folderNameList.clear();
+			selectedEncodedList.clear();
+			try {
+				clientSocket.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		else if (v.getId() == R.id.btUpload) {
+			// TODO Auto-generated method stub
+			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
+		}
+	}
+
+	class ListenForClientConnection implements Runnable {
+		@SuppressWarnings("resource")
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			try {
+				ServerSocket serverSocket = new ServerSocket(PORTNUMBER);
+				Log.i(TAG, "server ready ");
+				while (true) {
+					clientSocket = serverSocket.accept();
+					if (clientSocket.isConnected())
+						new Thread(new ListenForInput()).start();
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+	class ListenForInput implements Runnable {
+
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			DataInputStream dis = null;
+			try {
+				dis = new DataInputStream(clientSocket.getInputStream());
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			while (true) {
+				try {
+					request = dis.readUTF();
+					if (request.equals(null) || request.equals(""))
+						continue;
+					String code = Protocols.splitByMainSeperator(request)[0];
+					if (code.equals(Protocols.GET_FOLDER_LIST)) {
+						DataOutputStream dos = new DataOutputStream(
+								clientSocket.getOutputStream());
+						dos.writeUTF(pathString);
+
+					} else if (code.equals(Protocols.GET_SELECTED_FOLDER_LIST)) {
+						String selectedPath = Protocols
+								.splitByMainSeperator(request)[1];
+						String actualPath = Protocols
+								.getFilePathFromEncode(selectedPath);
+						File folder = new File(actualPath);
+						File[] folders = folder.listFiles();
+						response = "";
+						for (File f : folders)
+							response = response
+									+ Protocols.createEncodeFromFile(f);
+						DataOutputStream dos = new DataOutputStream(
+								clientSocket.getOutputStream());
+						dos.writeUTF(response);
+						dos.close();
+
+					} else if (code.equals(Protocols.GET_PARENT)) {
+						String currentPath = Protocols
+								.splitByMainSeperator(request)[1];
+						String actualPath = Protocols
+								.getFilePathFromEncode(currentPath);
+						File folder = new File(actualPath);
+						File parentFolder = folder.getParentFile();
+						File[] folders = parentFolder.listFiles();
+						response = "";
+						for (File f : folders)
+							response = response
+									+ Protocols.createEncodeFromFile(f);
+						DataOutputStream dos = new DataOutputStream(
+								clientSocket.getOutputStream());
+						dos.writeUTF(response);
+						dos.close();
+
+					} else if (code.equals(Protocols.DOWNLOAD_FOLDER)) {
+						String[] folderPaths = Protocols
+								.splitBySubSeperator(Protocols
+										.splitByMainSeperator(request)[1]);
+						for (String path : folderPaths) {
+							String filePath = Protocols
+									.getFilePathFromEncode(path);
+							Long fileSize = Protocols
+									.getFileSizeFromEncode(path);
+							File f = new File(filePath);
+							BufferedOutputStream bos = new BufferedOutputStream(
+									clientSocket.getOutputStream());
+							BufferedInputStream bis = new BufferedInputStream(
+									new FileInputStream(f));
+							Protocols.copyInputStreamToOutputStream(bis, bos,
+									fileSize);
+							bis.close();
+							bos.close();
+						}
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	public void displayToast(String msg) {
+		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+	}
+}
