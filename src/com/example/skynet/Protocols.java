@@ -15,8 +15,8 @@ public class Protocols {
 	public static final String GET_SELECTED_FOLDER_LIST = "11";
 	public static final String GET_PARENT = "12";
 	public static final String DOWNLOAD_FOLDER = "13";
-	public static final String MAIN_SEPERATOR = "#";
-	public static final String SUB_SEPERATOR = "$";
+	public static final String MAIN_SEPERATOR = "<";
+	public static final String SUB_SEPERATOR = ">";
 	public static final String TAG = "folderShare";
 
 	@SuppressLint("DefaultLocale")
@@ -30,7 +30,7 @@ public class Protocols {
 	}
 
 	public static String getFilePathFromEncode(String encode) {
-		return encode.substring(encode.lastIndexOf("/"));
+		return encode.substring(encode.indexOf("/"));
 	}
 
 	public static Long getFileSizeFromEncode(String encode) {

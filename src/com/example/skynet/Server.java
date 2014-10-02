@@ -69,14 +69,10 @@ public class Server extends Activity implements OnClickListener,
 				.setText(Protocols.convertIntIPtoStringIP(dhcp.serverAddress));
 		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
 
-		Toast.makeText(
-				getApplicationContext(),
-				Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
-						+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
-						+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
-						+ ":"
-						+ Protocols.convertIntIPtoStringIP(dhcp.ipAddress),
-				Toast.LENGTH_SHORT).show();
+		displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
+				+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
+				+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress) + ":"
+				+ Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
 	}
 
 	public void UIInitialization() {
@@ -95,8 +91,8 @@ public class Server extends Activity implements OnClickListener,
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setOnItemClickListener(this);
 		lvMyFolders.setOnItemLongClickListener(this);
-		folderNameList = new ArrayList<String>();
 
+		folderNameList = new ArrayList<String>();
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 
@@ -108,21 +104,18 @@ public class Server extends Activity implements OnClickListener,
 				.getExternalStorageState())) {
 			tempFolder = Environment.getExternalStorageDirectory();
 			tempFolders = tempFolder.listFiles();
-
 			folderNameList.clear();
 			encodedList.clear();
 			if (!tempFolders.equals(null)) {
 				for (File f : tempFolders) {
 					if (!f.equals(null)) {
 						encodedList.add(f.length() + f.getAbsolutePath());
-
 						folderNameList.add(f.getName());
 					}
 				}
 			}
 		} else {
 			encodedList.clear();
-
 			folderNameList.clear();
 			folderNameList.add("unmounted");
 		}
@@ -153,13 +146,13 @@ public class Server extends Activity implements OnClickListener,
 
 		tempFolder = new File(Protocols.getFilePathFromEncode(encodedList
 				.get(position)));
+		if (tempFolder.exists())
+			displayToast("folder exist");
 		if (tempFolder.isFile()) {
-			Toast.makeText(getApplicationContext(), "is file",
-					Toast.LENGTH_SHORT).show();
+			displayToast("is file");
 		} else {
 			tempFolders = tempFolder.listFiles();
 			encodedList.clear();
-
 			folderNameList.clear();
 			if (!tempFolders.equals(null)) {
 				for (File f : tempFolders) {
@@ -186,14 +179,12 @@ public class Server extends Activity implements OnClickListener,
 			String parent = tempFolder.getParent().toString();
 			tempFolder = new File(parent);
 			tempFolders = tempFolder.listFiles();
-
 			folderNameList.clear();
 			encodedList.clear();
 			if (!tempFolders.equals(null)) {
 				for (File f : tempFolders) {
 					if (!f.equals(null)) {
 						encodedList.add(f.length() + f.getAbsolutePath());
-
 						folderNameList.add(f.getName());
 					}
 				}
