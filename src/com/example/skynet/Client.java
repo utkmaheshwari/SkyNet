@@ -7,6 +7,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -40,13 +42,18 @@ public class Client extends Activity implements OnClickListener,
 	TextView tvServerIP, tvSelfIP;
 	EditText etIP;
 	Button btConnect, btDownload, btGet, btRefresh, btBack;
-	public Socket clientSocket;
+	public Socket clientSocket = null;
+	public InputStream is = null;
+	public OutputStream os = null;
+	public DataInputStream dis = null;
+	public DataOutputStream dos = null;
+	public BufferedInputStream bis = null;
 
 	public static final String TAG = "wifi";
 	public static final int PORTNUMBER = 9999;
 	public String response, request;
 	public static volatile boolean waitingForrequest = true;
-	public String currentFolderPath;
+	public String currentFolderPath = "";
 
 	ListView lvMyFolders;
 	ArrayList<String> folderNameList, encodedList, selectedEncodedList;
@@ -97,9 +104,8 @@ public class Client extends Activity implements OnClickListener,
 
 	public void WifiPeriferalInitialization() {
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		clientSocket = new Socket();
 		final DhcpInfo dhcp = wifiManager.getDhcpInfo();
-
+		clientSocket = new Socket();
 		tvServerIP
 				.setText(Protocols.convertIntIPtoStringIP(dhcp.serverAddress));
 		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
@@ -141,8 +147,6 @@ public class Client extends Activity implements OnClickListener,
 	@Override
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
-		
-
 		if (v.getId() == R.id.btRefresh) {
 			// TODO Auto-generated method stub
 			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
@@ -154,19 +158,11 @@ public class Client extends Activity implements OnClickListener,
 					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
 					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
 			folderNameList.clear();
-			folderNameList.add("refreshed.....m");
+			folderNameList.add("refreshed.....");
 			encodedList.clear();
 			selectedEncodedList.clear();
-			
-			try {
-				clientSocket.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
 		}
-		
+
 		else if (v.getId() == R.id.btBack) {
 			// TODO Auto-generated method stub
 			new GetParentFolder().execute(currentFolderPath);
@@ -177,7 +173,6 @@ public class Client extends Activity implements OnClickListener,
 			String pathString = Protocols
 					.clubBySubSeperator(selectedEncodedList);
 			new DownloadFolders().execute(pathString);
-
 		}
 
 		else if (v.getId() == R.id.btGet) {
@@ -191,7 +186,7 @@ public class Client extends Activity implements OnClickListener,
 		}
 	}
 
-	class ConnectClientToServer extends AsyncTask<String, Integer, Boolean> {
+	class ConnectClientToServer extends AsyncTask<String, String, Boolean> {
 
 		@Override
 		protected void onPreExecute() {
@@ -204,19 +199,27 @@ public class Client extends Activity implements OnClickListener,
 		protected Boolean doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			try {
+				// if (!clientSocket.isClosed() ||
+				// !clientSocket.isInputShutdown()
+				// || !clientSocket.isOutputShutdown()
+				// || clientSocket.isConnected()) {
+				// clientSocket = new Socket();
+				// return false;
+				// }
+				clientSocket = new Socket();
+				InetAddress inetAddress = InetAddress.getByName(params[0]);
+				clientSocket.connect(new InetSocketAddress(inetAddress,
+						PORTNUMBER));
+				is = clientSocket.getInputStream();
+				os = clientSocket.getOutputStream();
+				dis = new DataInputStream(is);
+				dos = new DataOutputStream(os);
+				bis = new BufferedInputStream(is);
 				if (clientSocket.isConnected()) {
-					clientSocket.close();
+					return true;
+				} else
 					return false;
-				} else {
-					clientSocket = new Socket();
-					InetAddress inetAddress = InetAddress.getByName(params[0]);
-					clientSocket.connect(new InetSocketAddress(inetAddress,
-							PORTNUMBER), 0);
-					if (clientSocket.isConnected())
-						return true;
-					else
-						return false;
-				}
+
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -236,9 +239,16 @@ public class Client extends Activity implements OnClickListener,
 				Log.i(TAG, "socket disconnected");
 			}
 		}
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			super.onProgressUpdate(values);
+			displayToast(values[0]);
+		}
 	}
 
-	class GetFolderList extends AsyncTask<String, Integer, Boolean> {
+	class GetFolderList extends AsyncTask<String, String, Boolean> {
 
 		@Override
 		protected void onPreExecute() {
@@ -252,32 +262,26 @@ public class Client extends Activity implements OnClickListener,
 			// TODO Auto-generated method stub
 
 			try {
-				DataOutputStream dos = new DataOutputStream(
-						clientSocket.getOutputStream());
 				request = Protocols.clubByMainSeperator(
 						Protocols.GET_FOLDER_LIST, params[0]);
+				publishProgress("request sent : " + request);
 				dos.writeUTF(request);
-				dos.close();
-
-				DataInputStream dis = new DataInputStream(
-						clientSocket.getInputStream());
+				dos.flush();
 				response = dis.readUTF();
-				dis.close();
+				publishProgress("response received : " + response);
 
-				if (response.equals(null))
+				if (response.equals(null) || response.equals(""))
 					return false;
-				else {
-					String[] paths = Protocols.splitBySubSeperator(response);
-					encodedList.clear();
-					folderNameList.clear();
-					for (String path : paths) {
-						encodedList.add(path);
-						folderNameList.add(Protocols
-								.getFileNameFromEncode(path));
-					}
-					arrayAdapter.notifyDataSetChanged();
-					return true;
+
+				String[] paths = Protocols.splitBySubSeperator(response);
+				encodedList.clear();
+				folderNameList.clear();
+				for (String path : paths) {
+					encodedList.add(path);
+					folderNameList.add(Protocols.getFileNameFromEncode(path));
 				}
+
+				return true;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -289,14 +293,22 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result)
+			if (result) {
 				displayToast("folder list fetched");
-			else
+				arrayAdapter.notifyDataSetChanged();
+			} else
 				displayToast("unable to fetch list");
+		}
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			super.onProgressUpdate(values);
+			displayToast(values[0]);
 		}
 	}
 
-	class GetSelectedFolderList extends AsyncTask<String, Integer, Boolean> {
+	class GetSelectedFolderList extends AsyncTask<String, String, Boolean> {
 
 		@Override
 		protected void onPreExecute() {
@@ -308,20 +320,15 @@ public class Client extends Activity implements OnClickListener,
 		@Override
 		protected Boolean doInBackground(String... params) {
 			// TODO Auto-generated method stub
-
 			try {
-				DataOutputStream dos = new DataOutputStream(
-						clientSocket.getOutputStream());
 				request = Protocols.clubByMainSeperator(
 						Protocols.GET_SELECTED_FOLDER_LIST, params[0]);
-				dos.writeUTF(response);
-				dos.close();
-
-				DataInputStream dis = new DataInputStream(
-						clientSocket.getInputStream());
+				publishProgress("Request- " + request);
+				dos.writeUTF(request);
+				dos.flush();
 				response = dis.readUTF();
-				dis.close();
-				if (response.equals(null))
+				publishProgress("Response- " + response);
+				if (response.equals(null) || response.equals(""))
 					return false;
 				else {
 					String[] paths = response.split(Protocols.SUB_SEPERATOR);
@@ -332,7 +339,6 @@ public class Client extends Activity implements OnClickListener,
 						folderNameList.add(Protocols
 								.getFileNameFromEncode(path));
 					}
-					arrayAdapter.notifyDataSetChanged();
 					return true;
 				}
 			} catch (IOException e) {
@@ -346,12 +352,19 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result)
+			if (result) {
 				displayToast("folder list fetched");
-			else
+				arrayAdapter.notifyDataSetChanged();
+			} else
 				displayToast("unable to fetch list");
 		}
 
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			super.onProgressUpdate(values);
+			displayToast(values[0]);
+		}
 	}
 
 	class GetParentFolder extends AsyncTask<String, String, Boolean> {
@@ -366,18 +379,14 @@ public class Client extends Activity implements OnClickListener,
 		protected Boolean doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			try {
-				DataOutputStream dos = new DataOutputStream(
-						clientSocket.getOutputStream());
 				request = Protocols.clubByMainSeperator(Protocols.GET_PARENT,
 						params[0]);
-				dos.writeUTF(response);
-				dos.close();
-
-				DataInputStream dis = new DataInputStream(
-						clientSocket.getInputStream());
+				publishProgress("request sent : " + request);
+				dos.writeUTF(request);
+				dos.flush();
 				response = dis.readUTF();
-				dis.close();
-				if (response.equals(null))
+				publishProgress("response received : " + response);
+				if (response.equals(null) || response.equals(""))
 					return false;
 				else {
 					String[] paths = Protocols.splitBySubSeperator(response);
@@ -388,7 +397,6 @@ public class Client extends Activity implements OnClickListener,
 						folderNameList.add(Protocols
 								.getFileNameFromEncode(path));
 					}
-					arrayAdapter.notifyDataSetChanged();
 					return true;
 				}
 			} catch (IOException e) {
@@ -402,10 +410,18 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result)
+			if (result) {
 				displayToast("folder list fetched");
-			else
+				arrayAdapter.notifyDataSetChanged();
+			} else
 				displayToast("unable to fetch list");
+		}
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			super.onProgressUpdate(values);
+			displayToast(values[0]);
 		}
 	}
 
@@ -421,12 +437,9 @@ public class Client extends Activity implements OnClickListener,
 		protected Boolean doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			try {
-				DataOutputStream dos = new DataOutputStream(
-						clientSocket.getOutputStream());
-				response = Protocols.clubByMainSeperator(
+				request = Protocols.clubByMainSeperator(
 						Protocols.DOWNLOAD_FOLDER, params[0]);
-				dos.writeUTF(response);
-				dos.close();
+				dos.writeUTF(request);
 
 				for (String path : selectedEncodedList) {
 					String fileName = Protocols.getFileNameFromEncode(path);
@@ -436,12 +449,10 @@ public class Client extends Activity implements OnClickListener,
 					if (!f.exists())
 						f.mkdirs();
 					File file = new File(f, fileName);
-					BufferedInputStream bis = new BufferedInputStream(
-							clientSocket.getInputStream());
 					BufferedOutputStream bos = new BufferedOutputStream(
 							new FileOutputStream(file));
 					Protocols.copyInputStreamToOutputStream(bis, bos, fileSize);
-					bis.close();
+					bos.flush();
 					bos.close();
 					publishProgress(fileName);
 				}
@@ -465,12 +476,12 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result)
+			if (result) {
 				displayToast("downloading complete");
-			else
+				arrayAdapter.notifyDataSetChanged();
+			} else
 				displayToast("downloading failed");
 		}
-
 	}
 
 	@Override
@@ -478,6 +489,14 @@ public class Client extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		try {
+			dos.flush();
+			os.close();
+			is.close();
+			dos.close();
+			dis.close();
+			bis.close();
+			clientSocket.shutdownOutput();
+			clientSocket.shutdownInput();
 			clientSocket.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

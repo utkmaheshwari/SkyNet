@@ -7,6 +7,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ public class Server extends Activity implements OnClickListener,
 		OnItemClickListener, OnItemLongClickListener {
 
 	WifiManager wifiManager;
-	Socket clientSocket = null;
 	TextView tvServerIP, tvSelfIP;
 	Button btUpload, btRefresh, btBack;
 
@@ -146,24 +147,24 @@ public class Server extends Activity implements OnClickListener,
 
 		tempFolder = new File(Protocols.getFilePathFromEncode(encodedList
 				.get(position)));
-		if (tempFolder.exists())
-			displayToast("folder exist");
+		if (!tempFolder.exists())
+			return;
 		if (tempFolder.isFile()) {
 			displayToast("is file");
-		} else {
-			tempFolders = tempFolder.listFiles();
-			encodedList.clear();
-			folderNameList.clear();
-			if (!tempFolders.equals(null)) {
-				for (File f : tempFolders) {
-					if (!f.equals(null)) {
-						encodedList.add(f.length() + f.getAbsolutePath());
-						folderNameList.add(f.getName());
-					}
+			return;
+		}
+		tempFolders = tempFolder.listFiles();
+		encodedList.clear();
+		folderNameList.clear();
+		if (!tempFolders.equals(null)) {
+			for (File f : tempFolders) {
+				if (!f.equals(null)) {
+					encodedList.add(f.length() + f.getAbsolutePath());
+					folderNameList.add(f.getName());
 				}
 			}
-			arrayAdapter.notifyDataSetChanged();
 		}
+		arrayAdapter.notifyDataSetChanged();
 	}
 
 	@Override
@@ -181,13 +182,13 @@ public class Server extends Activity implements OnClickListener,
 			tempFolders = tempFolder.listFiles();
 			folderNameList.clear();
 			encodedList.clear();
-			if (!tempFolders.equals(null)) {
-				for (File f : tempFolders) {
-					if (!f.equals(null)) {
-						encodedList.add(f.length() + f.getAbsolutePath());
-						folderNameList.add(f.getName());
-					}
-				}
+			if (tempFolders.equals(null))
+				return;
+			for (File f : tempFolders) {
+				if (f.equals(null))
+					continue;
+				encodedList.add(f.length() + f.getAbsolutePath());
+				folderNameList.add(f.getName());
 			}
 			arrayAdapter.notifyDataSetChanged();
 			lvMyFolders.setBackgroundColor(Color.TRANSPARENT);
@@ -206,17 +207,14 @@ public class Server extends Activity implements OnClickListener,
 			encodedList.clear();
 			folderNameList.clear();
 			selectedEncodedList.clear();
-			try {
-				clientSocket.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			displayToast("refresh complete");
 		}
 
 		else if (v.getId() == R.id.btUpload) {
 			// TODO Auto-generated method stub
 			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
+			displayToast("selected folders uploaded");
+			displayToast(pathString);
 		}
 	}
 
@@ -229,9 +227,9 @@ public class Server extends Activity implements OnClickListener,
 				ServerSocket serverSocket = new ServerSocket(PORTNUMBER);
 				Log.i(TAG, "server ready ");
 				while (true) {
-					clientSocket = serverSocket.accept();
-					if (clientSocket.isConnected())
-						new Thread(new ListenForInput()).start();
+					Socket clientSocket = serverSocket.accept();
+					Log.i(TAG, "socket connected");
+					new Thread(new ListenForInput(clientSocket)).start();
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -242,89 +240,149 @@ public class Server extends Activity implements OnClickListener,
 
 	class ListenForInput implements Runnable {
 
+		Socket clientSocket = null;
+
+		public ListenForInput(Socket clientSocket) {
+			this.clientSocket = clientSocket;
+		}
+
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
+			Log.i(TAG, "listening for input");
+			InputStream is = null;
+			OutputStream os = null;
 			DataInputStream dis = null;
+			DataOutputStream dos = null;
+			BufferedOutputStream bos = null;
 			try {
-				dis = new DataInputStream(clientSocket.getInputStream());
+				is = clientSocket.getInputStream();
+				os = clientSocket.getOutputStream();
+				dis = new DataInputStream(is);
+				dos = new DataOutputStream(os);
+				bos = new BufferedOutputStream(os);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+
 			while (true) {
 				try {
+					if (clientSocket.isOutputShutdown()
+							|| clientSocket.isInputShutdown())
+						break;
 					request = dis.readUTF();
+					Log.i(TAG, request);
 					if (request.equals(null) || request.equals(""))
 						continue;
 					String code = Protocols.splitByMainSeperator(request)[0];
+					Log.i(TAG, code);
 					if (code.equals(Protocols.GET_FOLDER_LIST)) {
-						DataOutputStream dos = new DataOutputStream(
-								clientSocket.getOutputStream());
-						dos.writeUTF(pathString);
 
+						Log.i(TAG, pathString);
+						dos.writeUTF(pathString);
+						dos.flush();
 					} else if (code.equals(Protocols.GET_SELECTED_FOLDER_LIST)) {
 						String selectedPath = Protocols
 								.splitByMainSeperator(request)[1];
+						Log.i(TAG, "selectedPath= " + selectedPath);
 						String actualPath = Protocols
 								.getFilePathFromEncode(selectedPath);
+						Log.i(TAG, "actualPath= " + actualPath);
 						File folder = new File(actualPath);
 						File[] folders = folder.listFiles();
 						response = "";
 						for (File f : folders)
 							response = response
 									+ Protocols.createEncodeFromFile(f);
-						DataOutputStream dos = new DataOutputStream(
-								clientSocket.getOutputStream());
-						dos.writeUTF(response);
-						dos.close();
 
+						Log.i(TAG, response);
+						dos.writeUTF(response);
+						dos.flush();
 					} else if (code.equals(Protocols.GET_PARENT)) {
 						String currentPath = Protocols
 								.splitByMainSeperator(request)[1];
-						String actualPath = Protocols
-								.getFilePathFromEncode(currentPath);
-						File folder = new File(actualPath);
-						File parentFolder = folder.getParentFile();
+						String actualParentPath = Protocols
+								.getParentFromEncode(currentPath);
+						// ////////////////////////////////
+						if (currentPath.equals("/storage"))
+							continue;
+						// ///////////////////////////////
+						File parentFolder = new File(actualParentPath);
 						File[] folders = parentFolder.listFiles();
 						response = "";
 						for (File f : folders)
 							response = response
 									+ Protocols.createEncodeFromFile(f);
-						DataOutputStream dos = new DataOutputStream(
-								clientSocket.getOutputStream());
-						dos.writeUTF(response);
-						dos.close();
 
+						Log.i(TAG, response);
+						dos.writeUTF(response);
+						dos.flush();
 					} else if (code.equals(Protocols.DOWNLOAD_FOLDER)) {
 						String[] folderPaths = Protocols
 								.splitBySubSeperator(Protocols
 										.splitByMainSeperator(request)[1]);
+						// /////////////////////////
+						if (folderPaths.length == 0)
+							continue;
+						// /////////////////////////
+
 						for (String path : folderPaths) {
 							String filePath = Protocols
 									.getFilePathFromEncode(path);
 							Long fileSize = Protocols
 									.getFileSizeFromEncode(path);
 							File f = new File(filePath);
-							BufferedOutputStream bos = new BufferedOutputStream(
-									clientSocket.getOutputStream());
+							// //////////////////
+							if (!f.exists())
+								continue;
+							// /////////////////
 							BufferedInputStream bis = new BufferedInputStream(
 									new FileInputStream(f));
 							Protocols.copyInputStreamToOutputStream(bis, bos,
 									fileSize);
+							bos.flush();
 							bis.close();
-							bos.close();
 						}
 					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
+			try {
+				bos.flush();
+				dos.flush();
+				os.close();
+				is.close();
+				bos.close();
+				dos.close();
+				dis.close();
+				clientSocket.shutdownOutput();
+				clientSocket.shutdownInput();
+				clientSocket.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 	}
 
 	public void displayToast(String msg) {
 		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
 	}
+
+	@Override
+	protected void onDestroy() {
+		// TODO Auto-generated method stub
+		super.onDestroy();
+	}
+
 }
