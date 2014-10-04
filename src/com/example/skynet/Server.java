@@ -177,7 +177,7 @@ public class Server extends Activity implements OnClickListener,
 						Toast.LENGTH_SHORT).show();
 				return;
 			}
-			String parent = tempFolder.getParent().toString();
+			String parent = tempFolder.getParent();
 			tempFolder = new File(parent);
 			tempFolders = tempFolder.listFiles();
 			folderNameList.clear();
@@ -290,31 +290,21 @@ public class Server extends Activity implements OnClickListener,
 								.getFilePathFromEncode(selectedPath);
 						Log.i(TAG, "actualPath= " + actualPath);
 						File folder = new File(actualPath);
-						File[] folders = folder.listFiles();
-						response = "";
-						for (File f : folders)
-							response = response
-									+ Protocols.createEncodeFromFile(f);
-
+						response=Protocols.createDataStringOfEntireFolder(folder);
 						Log.i(TAG, response);
 						dos.writeUTF(response);
 						dos.flush();
 					} else if (code.equals(Protocols.GET_PARENT)) {
-						String currentPath = Protocols
-								.splitByMainSeperator(request)[1];
-						String actualParentPath = Protocols
-								.getParentFromEncode(currentPath);
+						String encode = Protocols.splitByMainSeperator(request)[1];
+						String actualCurrentPath = Protocols
+								.getFilePathFromEncode(encode);
 						// ////////////////////////////////
-						if (currentPath.equals("/storage"))
+						if (actualCurrentPath.equals("/storage"))
 							continue;
 						// ///////////////////////////////
-						File parentFolder = new File(actualParentPath);
-						File[] folders = parentFolder.listFiles();
-						response = "";
-						for (File f : folders)
-							response = response
-									+ Protocols.createEncodeFromFile(f);
-
+						File currentFolder = new File(actualCurrentPath);
+						File parentFolder = new File(currentFolder.getParent());
+						response=Protocols.createDataStringOfEntireFolder(parentFolder);
 						Log.i(TAG, response);
 						dos.writeUTF(response);
 						dos.flush();

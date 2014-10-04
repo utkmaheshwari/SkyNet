@@ -280,7 +280,7 @@ public class Client extends Activity implements OnClickListener,
 					encodedList.add(path);
 					folderNameList.add(Protocols.getFileNameFromEncode(path));
 				}
-
+				currentFolderPath = Protocols.IS_NULL;
 				return true;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -389,6 +389,7 @@ public class Client extends Activity implements OnClickListener,
 				if (response.equals(null) || response.equals(""))
 					return false;
 				else {
+				//	Long parentFileSize=(long) 0;
 					String[] paths = Protocols.splitBySubSeperator(response);
 					encodedList.clear();
 					folderNameList.clear();
@@ -396,7 +397,9 @@ public class Client extends Activity implements OnClickListener,
 						encodedList.add(path);
 						folderNameList.add(Protocols
 								.getFileNameFromEncode(path));
+				//		parentFileSize+=Protocols.getFileSizeFromEncode(path);
 					}
+				//	currentFolderPath=parentFileSize+Protocols.getParentFromEncode(paths[0]);
 					return true;
 				}
 			} catch (IOException e) {
@@ -440,7 +443,7 @@ public class Client extends Activity implements OnClickListener,
 				request = Protocols.clubByMainSeperator(
 						Protocols.DOWNLOAD_FOLDER, params[0]);
 				dos.writeUTF(request);
-
+				dos.flush();
 				for (String path : selectedEncodedList) {
 					String fileName = Protocols.getFileNameFromEncode(path);
 					long fileSize = Protocols.getFileSizeFromEncode(path);

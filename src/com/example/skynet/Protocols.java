@@ -90,13 +90,20 @@ public class Protocols {
 		return clubbedString.substring(0, clubbedString.length() - 1);
 	}
 
-	public static String createEncodeFromFile(File f) {
+	public static String createDataStringOfEntireFolder(File folder) {
+		File[] files = folder.listFiles();
+		String dataString = "";
+		for (File f : files)
+			dataString = dataString + f.length() + f.getAbsolutePath()
+					+ Protocols.SUB_SEPERATOR;
+		return dataString.substring(0, dataString.length()-1);
+	}
+
+	public static String createEncodeOfFile(File f) {
 		if ((f.length() == 0) || (f.equals(null)))
 			return Protocols.IS_NULL;
-		String encode = "";
-		encode = encode + f.length() + f.getAbsolutePath()
-				+ Protocols.SUB_SEPERATOR;
-		return encode.substring(0, encode.length() - 1);
+		return (f.length() + f.getAbsolutePath());
+
 	}
 
 	public static boolean copyInputStreamToOutputStream(
