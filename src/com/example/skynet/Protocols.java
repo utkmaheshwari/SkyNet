@@ -27,31 +27,31 @@ public class Protocols {
 	}
 
 	public static String getFileNameFromEncode(String encode) {
-		if (encode.equals("") || encode.equals(null))
+		if (encode.equals("") | encode.equals(null))
 			return Protocols.IS_NULL;
 		return encode.substring(encode.lastIndexOf("/") + 1);
 	}
 
 	public static String getFilePathFromEncode(String encode) {
-		if (encode.equals("") || encode.equals(null))
+		if (encode.equals("") | encode.equals(null))
 			return Protocols.IS_NULL;
 		return encode.substring(encode.indexOf("/"));
 	}
 
 	public static String getParentFromEncode(String encode) {
-		if (encode.equals("") || encode.equals(null))
+		if (encode.equals("") | encode.equals(null))
 			return Protocols.IS_NULL;
 		return encode.substring(encode.indexOf("/"), encode.lastIndexOf("/"));
 	}
 
 	public static Long getFileSizeFromEncode(String encode) {
-		if (encode.equals("") || encode.equals(null))
+		if (encode.equals("") | encode.equals(null))
 			return (long) 0;
 		return Long.parseLong(encode.substring(0, encode.indexOf("/")));
 	}
 
 	public static String[] splitByMainSeperator(String data) {
-		if (data.equals("") || data.equals(null)) {
+		if (data.equals("") | data.equals(null)) {
 			String[] r = new String[0];
 			return r;
 		}
@@ -59,7 +59,7 @@ public class Protocols {
 	}
 
 	public static String[] splitBySubSeperator(String data) {
-		if (data.equals("") || data.equals(null)) {
+		if (data.equals("") | data.equals(null)) {
 			String[] r = { Protocols.IS_NULL, Protocols.IS_NULL };
 			return r;
 		}
@@ -67,13 +67,13 @@ public class Protocols {
 	}
 
 	public static String clubByMainSeperator(String code, String clubbedArray) {
-		if (code.equals(null) || code.equals(""))
+		if (code.equals(null) | code.equals(""))
 			return Protocols.IS_NULL;
 		return code + Protocols.MAIN_SEPERATOR + clubbedArray;
 	}
 
 	public static String clubBySubSeperator(String[] dataArray) {
-		if ((dataArray.length == 0) || (dataArray.equals(null)))
+		if ((dataArray.length == 0) | (dataArray.equals(null)))
 			return Protocols.IS_NULL;
 		String clubbedString = "";
 		for (String s : dataArray)
@@ -82,7 +82,7 @@ public class Protocols {
 	}
 
 	public static String clubBySubSeperator(ArrayList<String> dataList) {
-		if (dataList.isEmpty() || dataList.equals(null))
+		if (dataList.isEmpty() | dataList.equals(null))
 			return Protocols.IS_NULL;
 		String clubbedString = "";
 		for (String s : dataList)
@@ -100,7 +100,7 @@ public class Protocols {
 	}
 
 	public static String createEncodeOfFile(File f) {
-		if ((f.length() == 0) || (f.equals(null)))
+		if ((f.length() == 0) | (f.equals(null)))
 			return Protocols.IS_NULL;
 		return (f.length() + f.getAbsolutePath());
 
@@ -108,8 +108,8 @@ public class Protocols {
 
 	public static boolean copyInputStreamToOutputStream(
 			InputStream inputStream, OutputStream outputStream, long fileSize) {
-		if (inputStream.equals(null) || outputStream.equals(null)
-				|| fileSize == 0)
+		if (inputStream.equals(null) | outputStream.equals(null)
+				| fileSize == 0)
 			return false;
 		try {
 			int bufferSize = 1024;

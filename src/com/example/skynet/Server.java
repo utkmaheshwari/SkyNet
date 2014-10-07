@@ -130,9 +130,11 @@ public class Server extends Activity implements OnClickListener,
 		if (selectedEncodedList.contains(encodedList.get(arg2))) {
 			arg1.setBackgroundColor(Color.TRANSPARENT);
 			selectedEncodedList.remove(encodedList.get(arg2));
+		//	arg0.getChildAt(arg2).setSelected(false);
 		} else {
 			arg1.setBackgroundColor(Color.BLUE);
 			selectedEncodedList.add(encodedList.get(arg2));
+		//	arg0.getChildAt(arg2).setSelected(true);
 		}
 		arrayAdapter.notifyDataSetChanged();
 		Toast.makeText(getApplicationContext(), selectedEncodedList.toString(),
@@ -147,7 +149,8 @@ public class Server extends Activity implements OnClickListener,
 
 		tempFolder = new File(Protocols.getFilePathFromEncode(encodedList
 				.get(position)));
-		if (!tempFolder.exists())
+		if (!(tempFolder.canExecute() & tempFolder.canRead() & tempFolder
+				.exists()))
 			return;
 		if (tempFolder.isFile()) {
 			displayToast("is file");
@@ -208,6 +211,7 @@ public class Server extends Activity implements OnClickListener,
 			folderNameList.clear();
 			selectedEncodedList.clear();
 			displayToast("refresh complete");
+			arrayAdapter.notifyDataSetChanged();
 		}
 
 		else if (v.getId() == R.id.btUpload) {
@@ -290,7 +294,8 @@ public class Server extends Activity implements OnClickListener,
 								.getFilePathFromEncode(selectedPath);
 						Log.i(TAG, "actualPath= " + actualPath);
 						File folder = new File(actualPath);
-						response=Protocols.createDataStringOfEntireFolder(folder);
+						response = Protocols
+								.createDataStringOfEntireFolder(folder);
 						Log.i(TAG, response);
 						dos.writeUTF(response);
 						dos.flush();
@@ -304,7 +309,8 @@ public class Server extends Activity implements OnClickListener,
 						// ///////////////////////////////
 						File currentFolder = new File(actualCurrentPath);
 						File parentFolder = new File(currentFolder.getParent());
-						response=Protocols.createDataStringOfEntireFolder(parentFolder);
+						response = Protocols
+								.createDataStringOfEntireFolder(parentFolder);
 						Log.i(TAG, response);
 						dos.writeUTF(response);
 						dos.flush();
@@ -340,7 +346,7 @@ public class Server extends Activity implements OnClickListener,
 					e.printStackTrace();
 				}
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

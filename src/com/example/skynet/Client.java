@@ -56,7 +56,8 @@ public class Client extends Activity implements OnClickListener,
 	public String currentFolderPath = "";
 
 	ListView lvMyFolders;
-	ArrayList<String> folderNameList, encodedList, selectedEncodedList;
+	ArrayList<String> folderNameList, encodedList, selectedEncodedList,
+			originalEncodeList;
 	ArrayAdapter<String> arrayAdapter;
 
 	@Override
@@ -96,6 +97,7 @@ public class Client extends Activity implements OnClickListener,
 		folderNameList = new ArrayList<String>();
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
+		originalEncodeList = new ArrayList<String>();
 		folderNameList.add("nothing in here....");
 		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
 				android.R.layout.simple_list_item_1, folderNameList);
@@ -158,13 +160,57 @@ public class Client extends Activity implements OnClickListener,
 					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
 					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
 			folderNameList.clear();
-			folderNameList.add("refreshed.....");
 			encodedList.clear();
 			selectedEncodedList.clear();
+			originalEncodeList.clear();
+			arrayAdapter.notifyDataSetChanged();
 		}
 
 		else if (v.getId() == R.id.btBack) {
 			// TODO Auto-generated method stub
+			// ....................................................................
+			// ....................................................................
+			// ...................patch to solve the back issue...................
+			int cnt = 0;
+			String s = Protocols.getParentFromEncode(encodedList.get(0));
+			for (String encode : encodedList) {
+				if (s.equals(Protocols.getParentFromEncode(encode)))
+					continue;
+				else {
+					cnt = 1;
+					break;
+				}
+			}
+			if (cnt == 1)
+				return;
+			cnt = 0;
+			
+			for (String originalEncodePath : originalEncodeList) {
+				if (s.equals(Protocols
+						.getFilePathFromEncode(originalEncodePath))) {
+					folderNameList.clear();
+					encodedList.clear();
+					for (String path : originalEncodeList) {
+						folderNameList.add(Protocols
+								.getFileNameFromEncode(path));
+						encodedList.add(path);
+					}
+					currentFolderPath = originalEncodePath;
+					cnt = 1;
+					arrayAdapter.notifyDataSetChanged();
+					break;
+				}
+				
+			}
+			if(cnt==1)
+				return;
+			
+			if(originalEncodeList.equals(encodedList))
+				return;
+
+			// .....................................................................
+			// .....................................................................
+			// .....................................................................
 			new GetParentFolder().execute(currentFolderPath);
 		}
 
@@ -199,10 +245,10 @@ public class Client extends Activity implements OnClickListener,
 		protected Boolean doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			try {
-				// if (!clientSocket.isClosed() ||
+				// if (!clientSocket.isClosed() |
 				// !clientSocket.isInputShutdown()
-				// || !clientSocket.isOutputShutdown()
-				// || clientSocket.isConnected()) {
+				// | !clientSocket.isOutputShutdown()
+				// | clientSocket.isConnected()) {
 				// clientSocket = new Socket();
 				// return false;
 				// }
@@ -270,7 +316,7 @@ public class Client extends Activity implements OnClickListener,
 				response = dis.readUTF();
 				publishProgress("response received : " + response);
 
-				if (response.equals(null) || response.equals(""))
+				if (response.equals(null) | response.equals(""))
 					return false;
 
 				String[] paths = Protocols.splitBySubSeperator(response);
@@ -279,6 +325,9 @@ public class Client extends Activity implements OnClickListener,
 				for (String path : paths) {
 					encodedList.add(path);
 					folderNameList.add(Protocols.getFileNameFromEncode(path));
+					// //original (actual) path list stored here....
+					originalEncodeList.add(path);
+					// //////
 				}
 				currentFolderPath = Protocols.IS_NULL;
 				return true;
@@ -328,7 +377,7 @@ public class Client extends Activity implements OnClickListener,
 				dos.flush();
 				response = dis.readUTF();
 				publishProgress("Response- " + response);
-				if (response.equals(null) || response.equals(""))
+				if (response.equals(null) | response.equals(""))
 					return false;
 				else {
 					String[] paths = response.split(Protocols.SUB_SEPERATOR);
@@ -386,10 +435,10 @@ public class Client extends Activity implements OnClickListener,
 				dos.flush();
 				response = dis.readUTF();
 				publishProgress("response received : " + response);
-				if (response.equals(null) || response.equals(""))
+				if (response.equals(null) | response.equals(""))
 					return false;
 				else {
-				//	Long parentFileSize=(long) 0;
+					Long parentFileSize = (long) 0;
 					String[] paths = Protocols.splitBySubSeperator(response);
 					encodedList.clear();
 					folderNameList.clear();
@@ -397,9 +446,10 @@ public class Client extends Activity implements OnClickListener,
 						encodedList.add(path);
 						folderNameList.add(Protocols
 								.getFileNameFromEncode(path));
-				//		parentFileSize+=Protocols.getFileSizeFromEncode(path);
+						parentFileSize += Protocols.getFileSizeFromEncode(path);
 					}
-				//	currentFolderPath=parentFileSize+Protocols.getParentFromEncode(paths[0]);
+					currentFolderPath = parentFileSize
+							+ Protocols.getParentFromEncode(paths[0]);
 					return true;
 				}
 			} catch (IOException e) {
@@ -492,6 +542,7 @@ public class Client extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		try {
+			
 			dos.flush();
 			os.close();
 			is.close();
