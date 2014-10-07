@@ -130,11 +130,11 @@ public class Server extends Activity implements OnClickListener,
 		if (selectedEncodedList.contains(encodedList.get(arg2))) {
 			arg1.setBackgroundColor(Color.TRANSPARENT);
 			selectedEncodedList.remove(encodedList.get(arg2));
-		//	arg0.getChildAt(arg2).setSelected(false);
+			// arg0.getChildAt(arg2).setSelected(false);
 		} else {
 			arg1.setBackgroundColor(Color.BLUE);
 			selectedEncodedList.add(encodedList.get(arg2));
-		//	arg0.getChildAt(arg2).setSelected(true);
+			// arg0.getChildAt(arg2).setSelected(true);
 		}
 		arrayAdapter.notifyDataSetChanged();
 		Toast.makeText(getApplicationContext(), selectedEncodedList.toString(),
@@ -207,8 +207,8 @@ public class Server extends Activity implements OnClickListener,
 					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
 					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
 					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			encodedList.clear();
-			folderNameList.clear();
+			// encodedList.clear();
+			// folderNameList.clear();
 			selectedEncodedList.clear();
 			displayToast("refresh complete");
 			arrayAdapter.notifyDataSetChanged();
@@ -232,8 +232,16 @@ public class Server extends Activity implements OnClickListener,
 				Log.i(TAG, "server ready ");
 				while (true) {
 					Socket clientSocket = serverSocket.accept();
-					Log.i(TAG, "socket connected");
 					new Thread(new ListenForInput(clientSocket)).start();
+					runOnUiThread(new Runnable() {
+
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							displayToast("connected to a new client");
+						}
+					});
+					Log.i(TAG, "socket connected");
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
