@@ -210,7 +210,7 @@ public class Client extends Activity implements OnClickListener,
 			if (originalEncodeList.equals(encodedList))
 				return;
 
-			String s = Protocols.getParentFromEncode(encodedList.get(0));
+			String s = Protocols.getParentPathFromEncode(encodedList.get(0));
 			for (String originalEncodePath : originalEncodeList) {
 				if (s.equals(Protocols
 						.getFilePathFromEncode(originalEncodePath))) {
@@ -234,11 +234,11 @@ public class Client extends Activity implements OnClickListener,
 
 		else if (v.getId() == R.id.btDownload) {
 			// TODO Auto-generated method stub
-			if(selectedEncodedList.size()==0)
+			if (selectedEncodedList.size() == 0)
 				return;
 			String pathString = Protocols
 					.clubBySubSeperator(selectedEncodedList);
-			
+
 			new DownloadFolders().execute(pathString);
 		}
 
@@ -392,9 +392,7 @@ public class Client extends Activity implements OnClickListener,
 				request = Protocols.clubByMainSeperator(
 						Protocols.GET_SELECTED_FOLDER_LIST, params[0]);
 				// publishProgress("Request- " + request);
-				if (clientSocket.isInputShutdown()
-						| clientSocket.isOutputShutdown()
-						| !clientSocket.isConnected() | clientSocket.isClosed())
+				if (clientSocket.isClosed())
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
@@ -476,7 +474,7 @@ public class Client extends Activity implements OnClickListener,
 						parentFileSize += Protocols.getFileSizeFromEncode(path);
 					}
 					currentFolderPath = parentFileSize
-							+ Protocols.getParentFromEncode(paths[0]);
+							+ Protocols.getParentPathFromEncode(paths[0]);
 					return true;
 				}
 			} catch (IOException e) {
@@ -518,28 +516,52 @@ public class Client extends Activity implements OnClickListener,
 			// TODO Auto-generated method stub
 			try {
 				request = Protocols.clubByMainSeperator(
-						Protocols.DOWNLOAD_FOLDER, params[0]);
-				if (clientSocket.isInputShutdown()
-						| clientSocket.isOutputShutdown()
-						| !clientSocket.isConnected() | clientSocket.isClosed())
+						Protocols.PREPARE_FOR_DOWNLOAD, params[0]);
+				if (clientSocket.isClosed())
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
-				for (String path : selectedEncodedList) {
-					String fileName = Protocols.getFileNameFromEncode(path);
-					long fileSize = Protocols.getFileSizeFromEncode(path);
-					File f = new File(Environment.getExternalStorageDirectory()
-							+ "/" + getPackageName());
-					if (!f.exists())
-						f.mkdirs();
-					File file = new File(f, fileName);
+				publishProgress("PREPARING FOR DOWNLOAD");
+
+				File mainFolder = new File(
+						Environment.getExternalStorageDirectory() + "/"
+								+ getPackageName());
+				if (!mainFolder.exists())
+					mainFolder.mkdirs();
+
+				response = dis.readUTF();
+				publishProgress(response);
+				final String[] encodes = Protocols
+						.splitBySubSeperator(response);
+				for (String encode : encodes) {
+					String parentPath = Protocols
+							.getParentPathFromEncode(encode);
+					File folder = new File(mainFolder.getAbsolutePath()
+							+ parentPath);
+					
+					if (!folder.exists())
+						folder.mkdirs();
+				}
+				request = Protocols.clubByMainSeperator(
+						Protocols.START_DOWNLOAD, "");
+				if (clientSocket.isClosed())
+					return false;
+				dos.writeUTF(request);
+				dos.flush();
+
+				for (String encode : encodes) {
+					File file = new File(mainFolder.getAbsoluteFile()
+							+ Protocols.getParentPathFromEncode(encode),
+							Protocols.getFileNameFromEncode(encode));
 					BufferedOutputStream bos = new BufferedOutputStream(
 							new FileOutputStream(file));
-					Protocols.copyInputStreamToOutputStream(bis, bos, fileSize);
+					Protocols.copyInputStreamToOutputStream(bis, bos,
+							Protocols.getFileSizeFromEncode(encode));
 					bos.flush();
 					bos.close();
-					publishProgress(fileName);
+					publishProgress(file.getName() + " downloaded");
 				}
+				publishProgress("download complete");
 				selectedEncodedList.clear();
 
 			} catch (IOException e) {
@@ -554,7 +576,7 @@ public class Client extends Activity implements OnClickListener,
 		protected void onProgressUpdate(String... values) {
 			// TODO Auto-generated method stub
 			super.onProgressUpdate(values);
-			displayToast("File : " + values[0] + " downloaded");
+			displayToast(values[0]);
 		}
 
 		@Override

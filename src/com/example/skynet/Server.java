@@ -47,7 +47,8 @@ public class Server extends Activity implements OnClickListener,
 	public String pathString = "";
 
 	ListView lvMyFolders;
-	ArrayList<String> folderNameList, encodedList, selectedEncodedList;
+	ArrayList<String> folderNameList, encodedList, selectedEncodedList,
+			actualEncodedList, relativeEncodeList;
 	ArrayAdapter<String> arrayAdapter;
 	File tempFolder;
 	File[] tempFolders;
@@ -96,7 +97,8 @@ public class Server extends Activity implements OnClickListener,
 		folderNameList = new ArrayList<String>();
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
-
+		actualEncodedList = new ArrayList<String>();
+		relativeEncodeList = new ArrayList<String>();
 		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
 				android.R.layout.simple_list_item_1, folderNameList);
 		lvMyFolders.setAdapter(arrayAdapter);
@@ -162,7 +164,7 @@ public class Server extends Activity implements OnClickListener,
 		if (!tempFolders.equals(null)) {
 			for (File f : tempFolders) {
 				if (!f.equals(null)) {
-					encodedList.add(f.length() + f.getAbsolutePath());
+					encodedList.add(Protocols.createEncodeOfFile(f));
 					folderNameList.add(f.getName());
 				}
 			}
@@ -190,7 +192,7 @@ public class Server extends Activity implements OnClickListener,
 			for (File f : tempFolders) {
 				if (f.equals(null))
 					continue;
-				encodedList.add(f.length() + f.getAbsolutePath());
+				encodedList.add(Protocols.createEncodeOfFile(f));
 				folderNameList.add(f.getName());
 			}
 			arrayAdapter.notifyDataSetChanged();
@@ -210,6 +212,8 @@ public class Server extends Activity implements OnClickListener,
 			// encodedList.clear();
 			// folderNameList.clear();
 			selectedEncodedList.clear();
+			actualEncodedList.clear();
+			relativeEncodeList.clear();
 			displayToast("refresh complete");
 			arrayAdapter.notifyDataSetChanged();
 		}
@@ -322,32 +326,36 @@ public class Server extends Activity implements OnClickListener,
 						Log.i(TAG, response);
 						dos.writeUTF(response);
 						dos.flush();
-					} else if (code.equals(Protocols.DOWNLOAD_FOLDER)) {
-						String[] folderPaths = Protocols
+					} else if (code.equals(Protocols.PREPARE_FOR_DOWNLOAD)) {
+						String[] selectedFolderPaths = Protocols
 								.splitBySubSeperator(Protocols
 										.splitByMainSeperator(request)[1]);
-						// /////////////////////////
-						if (folderPaths.length == 0)
+						if (selectedFolderPaths.length == 0)
 							continue;
-						// /////////////////////////
 
-						for (String path : folderPaths) {
-							String filePath = Protocols
-									.getFilePathFromEncode(path);
-							Long fileSize = Protocols
-									.getFileSizeFromEncode(path);
-							File f = new File(filePath);
-							// //////////////////
-							if (!f.exists())
-								continue;
-							// /////////////////
+						for (String path : selectedFolderPaths) {
+							File f = new File(
+									Protocols.getFilePathFromEncode(path));
+							getFilesInFolders(f,
+									Protocols.getFilePathFromEncode(path));
+						}
+						response = Protocols
+								.clubBySubSeperator(relativeEncodeList);
+						dos.writeUTF(response);
+						dos.flush();
+					} else if (code.equals(Protocols.START_DOWNLOAD)) {
+						for (String encode : actualEncodedList) {
+							File f = new File(
+									Protocols.getFilePathFromEncode(encode));
 							BufferedInputStream bis = new BufferedInputStream(
 									new FileInputStream(f));
 							Protocols.copyInputStreamToOutputStream(bis, bos,
-									fileSize);
+									Protocols.getFileSizeFromEncode(encode));
 							bos.flush();
 							bis.close();
 						}
+						actualEncodedList.clear();
+						relativeEncodeList.clear();
 					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -376,6 +384,20 @@ public class Server extends Activity implements OnClickListener,
 				e.printStackTrace();
 			}
 
+		}
+
+		public void getFilesInFolders(File f, String filePath) {
+			if (f.isFile()) {
+				actualEncodedList.add(Protocols.createEncodeOfFile(f));
+				relativeEncodeList.add(Protocols.produceRelativePathEcodes(f,
+						filePath));
+			} else if (f.isDirectory()) {
+				File[] fileList = f.listFiles();
+				if (fileList.length == 0 || fileList.equals(null))
+					return;
+				for (File file : fileList)
+					getFilesInFolders(file, filePath);
+			}
 		}
 	}
 

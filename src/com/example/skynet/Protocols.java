@@ -14,7 +14,8 @@ public class Protocols {
 	public static final String GET_FOLDER_LIST = "10";
 	public static final String GET_SELECTED_FOLDER_LIST = "11";
 	public static final String GET_PARENT = "12";
-	public static final String DOWNLOAD_FOLDER = "13";
+	public static final String PREPARE_FOR_DOWNLOAD = "13";
+	public static final String START_DOWNLOAD = "14";
 	public static final String MAIN_SEPERATOR = "<";
 	public static final String SUB_SEPERATOR = ">";
 	public static final String TAG = "folderShare";
@@ -38,10 +39,22 @@ public class Protocols {
 		return encode.substring(encode.indexOf("/"));
 	}
 
-	public static String getParentFromEncode(String encode) {
+	public static String getParentPathFromEncode(String encode) {
 		if (encode.equals("") | encode.equals(null))
 			return Protocols.IS_NULL;
 		return encode.substring(encode.indexOf("/"), encode.lastIndexOf("/"));
+	}
+
+	public static String produceRelativePathEcodes(File f, String parentPath) {
+		String filePath = f.getAbsolutePath();
+		return f.length()
+				+ filePath.replaceFirst(
+						parentPath.substring(0, parentPath.lastIndexOf("/")),
+						"");
+	}
+
+	public static String getParentNameFromEncode(String encode) {
+		return getFileNameFromEncode(getParentPathFromEncode(encode));
 	}
 
 	public static Long getFileSizeFromEncode(String encode) {
@@ -92,17 +105,28 @@ public class Protocols {
 
 	public static String createDataStringOfEntireFolder(File folder) {
 		File[] files = folder.listFiles();
+		if (files.length == 0 || files.equals(null))
+			return Protocols.IS_NULL;
 		String dataString = "";
-		for (File f : files)
-			dataString = dataString + f.length() + f.getAbsolutePath()
-					+ Protocols.SUB_SEPERATOR;
-		return dataString.substring(0, dataString.length()-1);
+		for (File f : files) {
+			if (f.isDirectory())
+				dataString = dataString + (long) 0 + f.getAbsolutePath()
+						+ Protocols.SUB_SEPERATOR;
+			else if (f.isFile())
+				dataString = dataString + f.length() + f.getAbsolutePath()
+						+ Protocols.SUB_SEPERATOR;
+		}
+		return dataString.substring(0, dataString.length() - 1);
 	}
 
 	public static String createEncodeOfFile(File f) {
 		if ((f.length() == 0) | (f.equals(null)))
 			return Protocols.IS_NULL;
-		return (f.length() + f.getAbsolutePath());
+		if (f.isDirectory())
+			return ((long) 0 + f.getAbsolutePath());
+		else if (f.isFile())
+			return (f.length() + f.getAbsolutePath());
+		return Protocols.IS_NULL;
 
 	}
 
