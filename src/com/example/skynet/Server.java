@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -109,18 +108,17 @@ public class Server extends Activity implements OnClickListener,
 			tempFolders = tempFolder.listFiles();
 			folderNameList.clear();
 			encodedList.clear();
-			if (!tempFolders.equals(null)) {
-				for (File f : tempFolders) {
-					if (!f.equals(null)) {
-						encodedList.add(f.length() + f.getAbsolutePath());
-						folderNameList.add(f.getName());
-					}
+
+			for (File f : tempFolders) {
+				if ((!f.isHidden()) && f.exists() && f.canRead()) {
+					encodedList.add(f.length() + f.getAbsolutePath());
+					folderNameList.add(f.getName());
 				}
 			}
+
 		} else {
 			encodedList.clear();
 			folderNameList.clear();
-			folderNameList.add("unmounted");
 		}
 		arrayAdapter.notifyDataSetChanged();
 	}
@@ -161,9 +159,9 @@ public class Server extends Activity implements OnClickListener,
 		tempFolders = tempFolder.listFiles();
 		encodedList.clear();
 		folderNameList.clear();
-		if (!tempFolders.equals(null)) {
+		if (tempFolders.length != 0) {
 			for (File f : tempFolders) {
-				if (!f.equals(null)) {
+				if ((!f.isHidden()) && f.exists() && f.canRead()) {
 					encodedList.add(Protocols.createEncodeOfFile(f));
 					folderNameList.add(f.getName());
 				}
@@ -187,13 +185,13 @@ public class Server extends Activity implements OnClickListener,
 			tempFolders = tempFolder.listFiles();
 			folderNameList.clear();
 			encodedList.clear();
-			if (tempFolders.equals(null))
+			if (tempFolders.length == 0)
 				return;
 			for (File f : tempFolders) {
-				if (f.equals(null))
-					continue;
-				encodedList.add(Protocols.createEncodeOfFile(f));
-				folderNameList.add(f.getName());
+				if ((!f.isHidden()) && f.exists() && f.canRead()) {
+					encodedList.add(Protocols.createEncodeOfFile(f));
+					folderNameList.add(f.getName());
+				}
 			}
 			arrayAdapter.notifyDataSetChanged();
 			lvMyFolders.setBackgroundColor(Color.TRANSPARENT);
@@ -294,7 +292,6 @@ public class Server extends Activity implements OnClickListener,
 					String code = Protocols.splitByMainSeperator(request)[0];
 					Log.i(TAG, code);
 					if (code.equals(Protocols.GET_FOLDER_LIST)) {
-
 						Log.i(TAG, pathString);
 						dos.writeUTF(pathString);
 						dos.flush();
@@ -347,6 +344,8 @@ public class Server extends Activity implements OnClickListener,
 						for (String encode : actualEncodedList) {
 							File f = new File(
 									Protocols.getFilePathFromEncode(encode));
+							if (!((!f.isHidden()) && f.exists() && f.canRead()))
+								continue;
 							BufferedInputStream bis = new BufferedInputStream(
 									new FileInputStream(f));
 							Protocols.copyInputStreamToOutputStream(bis, bos,
@@ -387,13 +386,16 @@ public class Server extends Activity implements OnClickListener,
 		}
 
 		public void getFilesInFolders(File f, String filePath) {
+
+			if (!((!f.isHidden()) && f.canRead() && f.exists()))
+				return;
 			if (f.isFile()) {
 				actualEncodedList.add(Protocols.createEncodeOfFile(f));
 				relativeEncodeList.add(Protocols.produceRelativePathEcodes(f,
 						filePath));
 			} else if (f.isDirectory()) {
 				File[] fileList = f.listFiles();
-				if (fileList.length == 0 || fileList.equals(null))
+				if (fileList.length == 0)
 					return;
 				for (File file : fileList)
 					getFilesInFolders(file, filePath);

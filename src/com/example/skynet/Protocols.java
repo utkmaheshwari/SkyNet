@@ -105,10 +105,12 @@ public class Protocols {
 
 	public static String createDataStringOfEntireFolder(File folder) {
 		File[] files = folder.listFiles();
-		if (files.length == 0 || files.equals(null))
+		if (files.length == 0)
 			return Protocols.IS_NULL;
 		String dataString = "";
 		for (File f : files) {
+			if (!((!f.isHidden()) && f.canRead() && f.exists()))
+				continue;
 			if (f.isDirectory())
 				dataString = dataString + (long) 0 + f.getAbsolutePath()
 						+ Protocols.SUB_SEPERATOR;
@@ -120,7 +122,7 @@ public class Protocols {
 	}
 
 	public static String createEncodeOfFile(File f) {
-		if ((f.length() == 0) | (f.equals(null)))
+		if (!((!f.isHidden()) && f.canRead() && f.exists()))
 			return Protocols.IS_NULL;
 		if (f.isDirectory())
 			return ((long) 0 + f.getAbsolutePath());
