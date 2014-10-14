@@ -42,18 +42,18 @@ public class Client extends Activity implements OnClickListener,
 	TextView tvServerIP, tvSelfIP;
 	EditText etIP;
 	Button btConnect, btDownload, btGet, btRefresh, btBack;
-	public Socket clientSocket = null;
-	public InputStream is = null;
-	public OutputStream os = null;
-	public DataInputStream dis = null;
-	public DataOutputStream dos = null;
-	public BufferedInputStream bis = null;
+	private Socket clientSocket = null;
+	private InputStream is = null;
+	private OutputStream os = null;
+	private DataInputStream dis = null;
+	private DataOutputStream dos = null;
+	private BufferedInputStream bis = null;
 
-	public static final String TAG = "wifi";
-	public static final int PORTNUMBER = 9999;
-	public String response, request;
-	public static volatile boolean waitingForrequest = true;
-	public String currentFolderPath = "";
+	private static final String TAG = "wifi";
+	private static final int PORTNUMBER = 9999;
+	private String response, request;
+	private static volatile boolean isConnected = false;
+	private String currentFolderPath = "";
 
 	ListView lvMyFolders;
 	ArrayList<String> folderNameList, encodedList, selectedEncodedList,
@@ -270,6 +270,7 @@ public class Client extends Activity implements OnClickListener,
 				InetAddress inetAddress = InetAddress.getByName(params[0]);
 				clientSocket.connect(new InetSocketAddress(inetAddress,
 						PORTNUMBER));
+				isConnected = true;
 				is = clientSocket.getInputStream();
 				os = clientSocket.getOutputStream();
 				dis = new DataInputStream(is);
@@ -584,14 +585,8 @@ public class Client extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		try {
-			if (clientSocket.isClosed())
+			if (!isConnected)
 				return;
-
-			if (clientSocket.isInputShutdown()
-					| clientSocket.isOutputShutdown()) {
-				clientSocket.close();
-				return;
-			}
 			dos.flush();
 			os.close();
 			is.close();

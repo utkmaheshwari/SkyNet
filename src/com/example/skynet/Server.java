@@ -36,20 +36,20 @@ import android.widget.Toast;
 public class Server extends Activity implements OnClickListener,
 		OnItemClickListener, OnItemLongClickListener {
 
-	WifiManager wifiManager;
 	TextView tvServerIP, tvSelfIP;
 	Button btUpload, btRefresh, btBack;
 
-	public static final String TAG = "wifi";
-	public static final int PORTNUMBER = 9999;
-	public String response, request;
-	public String pathString = "";
+	private WifiManager wifiManager;
+	private static final String TAG = "wifi";
+	private static final int PORTNUMBER = 9999;
+	private String response="", request="";
+	private String pathString = "";
 
-	ListView lvMyFolders;
-	ArrayList<String> folderNameList, encodedList, selectedEncodedList,
+	private ListView lvMyFolders;
+	private ArrayList<String> folderNameList, encodedList, selectedEncodedList,
 			actualEncodedList, relativeEncodeList;
-	ArrayAdapter<String> arrayAdapter;
-	File currentFolder;
+	private ArrayAdapter<String> arrayAdapter;
+	private File currentFolder=null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
