@@ -49,8 +49,7 @@ public class Server extends Activity implements OnClickListener,
 	ArrayList<String> folderNameList, encodedList, selectedEncodedList,
 			actualEncodedList, relativeEncodeList;
 	ArrayAdapter<String> arrayAdapter;
-	File tempFolder;
-	File[] tempFolders;
+	File currentFolder;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -98,24 +97,25 @@ public class Server extends Activity implements OnClickListener,
 		selectedEncodedList = new ArrayList<String>();
 		actualEncodedList = new ArrayList<String>();
 		relativeEncodeList = new ArrayList<String>();
+
 		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
 				android.R.layout.simple_list_item_1, folderNameList);
 		lvMyFolders.setAdapter(arrayAdapter);
 
 		if (Environment.MEDIA_MOUNTED.equals(Environment
 				.getExternalStorageState())) {
-			tempFolder = Environment.getExternalStorageDirectory();
-			tempFolders = tempFolder.listFiles();
+			File externalStorage = Environment.getExternalStorageDirectory();
+			File[] subFiles = externalStorage.listFiles();
 			folderNameList.clear();
 			encodedList.clear();
 
-			for (File f : tempFolders) {
+			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
-					encodedList.add(f.length() + f.getAbsolutePath());
+					encodedList.add(Protocols.createEncodeOfFile(f));
 					folderNameList.add(f.getName());
 				}
 			}
-
+			currentFolder = externalStorage;
 		} else {
 			encodedList.clear();
 			folderNameList.clear();
@@ -130,11 +130,9 @@ public class Server extends Activity implements OnClickListener,
 		if (selectedEncodedList.contains(encodedList.get(arg2))) {
 			arg1.setBackgroundColor(Color.TRANSPARENT);
 			selectedEncodedList.remove(encodedList.get(arg2));
-			// arg0.getChildAt(arg2).setSelected(false);
 		} else {
 			arg1.setBackgroundColor(Color.BLUE);
 			selectedEncodedList.add(encodedList.get(arg2));
-			// arg0.getChildAt(arg2).setSelected(true);
 		}
 		arrayAdapter.notifyDataSetChanged();
 		Toast.makeText(getApplicationContext(), selectedEncodedList.toString(),
@@ -146,27 +144,26 @@ public class Server extends Activity implements OnClickListener,
 	public void onItemClick(AdapterView<?> arg0, View arg1, int position,
 			long arg3) {
 		// TODO Auto-generated method stub
-
-		tempFolder = new File(Protocols.getFilePathFromEncode(encodedList
+		File file = new File(Protocols.getFilePathFromEncode(encodedList
 				.get(position)));
-		if (!(tempFolder.canExecute() & tempFolder.canRead() & tempFolder
-				.exists()))
+		if (!((!file.isHidden()) && file.exists() && file.canRead()))
 			return;
-		if (tempFolder.isFile()) {
+		if (file.isFile()) {
 			displayToast("is file");
 			return;
 		}
-		tempFolders = tempFolder.listFiles();
+		File[] subFiles = file.listFiles();
 		encodedList.clear();
 		folderNameList.clear();
-		if (tempFolders.length != 0) {
-			for (File f : tempFolders) {
+		if (subFiles.length != 0) {
+			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
 					encodedList.add(Protocols.createEncodeOfFile(f));
 					folderNameList.add(f.getName());
 				}
 			}
 		}
+		currentFolder = file;
 		arrayAdapter.notifyDataSetChanged();
 	}
 
@@ -175,19 +172,19 @@ public class Server extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		if (v.getId() == R.id.btBack) {
 			// TODO Auto-generated method stub
-			if (tempFolder.getAbsolutePath().equals("/storage")) {
+			if (currentFolder.getAbsolutePath().equals("/storage")) {
 				Toast.makeText(getApplicationContext(), ".......",
 						Toast.LENGTH_SHORT).show();
 				return;
 			}
-			String parent = tempFolder.getParent();
-			tempFolder = new File(parent);
-			tempFolders = tempFolder.listFiles();
+			String parent = currentFolder.getParent();
+			currentFolder = new File(parent);
+			File[] subFiles = currentFolder.listFiles();
 			folderNameList.clear();
 			encodedList.clear();
-			if (tempFolders.length == 0)
+			if (subFiles.length == 0)
 				return;
-			for (File f : tempFolders) {
+			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
 					encodedList.add(Protocols.createEncodeOfFile(f));
 					folderNameList.add(f.getName());
@@ -207,8 +204,6 @@ public class Server extends Activity implements OnClickListener,
 					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
 					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
 					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			// encodedList.clear();
-			// folderNameList.clear();
 			selectedEncodedList.clear();
 			actualEncodedList.clear();
 			relativeEncodeList.clear();
@@ -231,6 +226,14 @@ public class Server extends Activity implements OnClickListener,
 			// TODO Auto-generated method stub
 			try {
 				ServerSocket serverSocket = new ServerSocket(PORTNUMBER);
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						displayToast("server ready");
+					}
+				});
 				Log.i(TAG, "server ready ");
 				while (true) {
 					Socket clientSocket = serverSocket.accept();
@@ -312,10 +315,8 @@ public class Server extends Activity implements OnClickListener,
 						String encode = Protocols.splitByMainSeperator(request)[1];
 						String actualCurrentPath = Protocols
 								.getFilePathFromEncode(encode);
-						// ////////////////////////////////
 						if (actualCurrentPath.equals("/storage"))
 							continue;
-						// ///////////////////////////////
 						File currentFolder = new File(actualCurrentPath);
 						File parentFolder = new File(currentFolder.getParent());
 						response = Protocols
@@ -382,7 +383,6 @@ public class Server extends Activity implements OnClickListener,
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 
 		public void getFilesInFolders(File f, String filePath) {
@@ -412,5 +412,4 @@ public class Server extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		super.onDestroy();
 	}
-
 }

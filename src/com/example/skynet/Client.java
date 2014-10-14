@@ -324,16 +324,12 @@ public class Client extends Activity implements OnClickListener,
 			try {
 				request = Protocols.clubByMainSeperator(
 						Protocols.GET_FOLDER_LIST, params[0]);
-				// publishProgress("request sent : " + request);
-				if (clientSocket.isInputShutdown()
-						| clientSocket.isOutputShutdown()
-						| !clientSocket.isConnected() | clientSocket.isClosed())
+				if (clientSocket.isClosed())
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
-				response = dis.readUTF();
-				// publishProgress("response received : " + response);
 
+				response = dis.readUTF();
 				if (response.equals(null) | response.equals(""))
 					return false;
 
@@ -344,9 +340,7 @@ public class Client extends Activity implements OnClickListener,
 				for (String path : paths) {
 					encodedList.add(path);
 					folderNameList.add(Protocols.getFileNameFromEncode(path));
-					// //original (actual) path list stored here....
 					originalEncodeList.add(path);
-					// //////
 				}
 				currentFolderPath = Protocols.IS_NULL;
 				return true;
@@ -391,13 +385,12 @@ public class Client extends Activity implements OnClickListener,
 			try {
 				request = Protocols.clubByMainSeperator(
 						Protocols.GET_SELECTED_FOLDER_LIST, params[0]);
-				// publishProgress("Request- " + request);
 				if (clientSocket.isClosed())
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
+
 				response = dis.readUTF();
-				// publishProgress("Response- " + response);
 				if (response.equals(null) | response.equals(""))
 					return false;
 				else {
@@ -451,15 +444,12 @@ public class Client extends Activity implements OnClickListener,
 			try {
 				request = Protocols.clubByMainSeperator(Protocols.GET_PARENT,
 						params[0]);
-				// publishProgress("request sent : " + request);
-				if (clientSocket.isInputShutdown()
-						| clientSocket.isOutputShutdown()
-						| !clientSocket.isConnected() | clientSocket.isClosed())
+				if (clientSocket.isClosed())
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
+
 				response = dis.readUTF();
-				// publishProgress("response received : " + response);
 				if (response.equals(null) | response.equals(""))
 					return false;
 				else {
@@ -538,7 +528,6 @@ public class Client extends Activity implements OnClickListener,
 							.getParentPathFromEncode(encode);
 					File folder = new File(mainFolder.getAbsolutePath()
 							+ parentPath);
-					
 					if (!folder.exists())
 						folder.mkdirs();
 				}
@@ -563,7 +552,6 @@ public class Client extends Activity implements OnClickListener,
 				}
 				publishProgress("download complete");
 				selectedEncodedList.clear();
-
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -596,10 +584,7 @@ public class Client extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		try {
-
-			if (clientSocket.isInputShutdown()
-					| clientSocket.isOutputShutdown()
-					| !clientSocket.isConnected() | clientSocket.isClosed())
+			if (clientSocket.isClosed())
 				return;
 
 			if (clientSocket.isInputShutdown()

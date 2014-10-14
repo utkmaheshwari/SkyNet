@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-
 import android.annotation.SuppressLint;
 
 @SuppressLint("DefaultLocale")
@@ -141,7 +140,6 @@ public class Protocols {
 			int bufferSize = 1024;
 			byte[] buffer = new byte[bufferSize];
 			int len = 0;
-
 			while ((fileSize > 0)
 					&& (len = inputStream.read(buffer, 0,
 							(int) Math.min(buffer.length, fileSize))) != -1) {
@@ -149,7 +147,6 @@ public class Protocols {
 				outputStream.flush();
 				fileSize -= len;
 			}
-
 			// while ((len = inputStream.read(buffer)) != -1) {
 			// Log.i(TAG, "writing " + len + buffer.toString());
 			// outputStream.write(buffer, 0, len);
