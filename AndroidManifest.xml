@@ -5,7 +5,7 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="9"
+        android:minSdkVersion="14"
         android:targetSdkVersion="19" />
 
     <uses-permission
@@ -26,30 +26,29 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:required="true" />
+    <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY"/>
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/icon_skynet"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@android:style/Theme.Holo.Light.DarkActionBar" >
         <activity
             android:name="com.example.skynet.MainActivity"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.Black" >
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name="com.example.skynet.Server"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.Black" >
+            android:label="@string/app_name" >
         </activity>
         <activity
             android:name="com.example.skynet.Client"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.Black" >
+            android:label="@string/app_name" >
         </activity>
     </application>
 

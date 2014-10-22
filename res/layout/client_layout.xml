@@ -16,7 +16,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:text="Server IP"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="@android:color/darker_gray" />
 
         <TextView
             android:id="@+id/tvServerIP"
@@ -24,7 +25,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="0.0.0.0"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="@android:color/darker_gray" />
     </LinearLayout>
 
     <LinearLayout
@@ -39,7 +41,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:text="Self IP"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="@android:color/darker_gray" />
 
         <TextView
             android:id="@+id/tvSelfIP"
@@ -47,14 +50,15 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="0.0.0.0"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="@android:color/darker_gray" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:weightSum="3" >
+        android:weightSum="4" >
 
         <EditText
             android:id="@+id/etIP"
@@ -64,58 +68,12 @@
             android:ems="10" >
         </EditText>
 
-        <Button
-            android:id="@+id/btConnect"
+        <ImageButton
+            android:id="@+id/ibConnect"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:text="Connect" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="2" >
-
-        <Button
-            android:id="@+id/btBack"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="back"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <Button
-            android:id="@+id/btGet"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Get"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="2" >
-
-        <Button
-            android:id="@+id/btRefresh"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Refresh"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <Button
-            android:id="@+id/btDownload"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="download"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:layout_weight="3"
+            android:src="@drawable/ic_action_cloud" />
     </LinearLayout>
 
     <ListView

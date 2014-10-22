@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -21,35 +22,38 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 @SuppressLint("DefaultLocale")
-public class Server extends Activity implements OnClickListener,
-		OnItemClickListener, OnItemLongClickListener {
+public class Server extends Activity implements OnItemClickListener {
 
 	TextView tvServerIP, tvSelfIP;
-	Button btUpload, btRefresh, btBack;
 
 	private WifiManager wifiManager;
 	private static final String TAG = "wifi";
 	private static final int PORTNUMBER = 9999;
-	private String response="", request="";
+	private String response = "", request = "";
 	private String pathString = "";
 
 	private ListView lvMyFolders;
-	private ArrayList<String> folderNameList, encodedList, selectedEncodedList,
+	private ArrayList<CustomListItem> customList;
+	private ArrayList<String> encodedList, selectedEncodedList,
 			actualEncodedList, relativeEncodeList;
-	private ArrayAdapter<String> arrayAdapter;
-	private File currentFolder=null;
+	private ArrayAdapter<CustomListAdapter> arrayAdapter;
+	public OnCheckedChangeListener onCheckedChangeListener;
+	public OnItemClickListener onItemClickListener;
+	private File currentFolder = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -79,71 +83,54 @@ public class Server extends Activity implements OnClickListener,
 		tvServerIP = (TextView) findViewById(R.id.tvServerIP);
 		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
 
-		btRefresh = (Button) findViewById(R.id.btRefresh);
-		btRefresh.setOnClickListener(this);
-
-		btUpload = (Button) findViewById(R.id.btUpload);
-		btUpload.setOnClickListener(this);
-
-		btBack = (Button) findViewById(R.id.btBack);
-		btBack.setOnClickListener(this);
-
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setOnItemClickListener(this);
-		lvMyFolders.setOnItemLongClickListener(this);
 
-		folderNameList = new ArrayList<String>();
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		actualEncodedList = new ArrayList<String>();
 		relativeEncodeList = new ArrayList<String>();
-
-		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
-				android.R.layout.simple_list_item_1, folderNameList);
-		lvMyFolders.setAdapter(arrayAdapter);
+		customList = new ArrayList<CustomListItem>();
+		/*
+		 * arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
+		 * android.R.layout.simple_list_item_1, folderNameList);
+		 * lvMyFolders.setAdapter(arrayAdapter);
+		 */
 
 		if (Environment.MEDIA_MOUNTED.equals(Environment
 				.getExternalStorageState())) {
 			File externalStorage = Environment.getExternalStorageDirectory();
 			File[] subFiles = externalStorage.listFiles();
-			folderNameList.clear();
+			customList.clear();
 			encodedList.clear();
 
 			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
+					if (f.isFile())
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_view_as_list, f.getName(),
+								false));
+					else if (f.isDirectory())
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_collection, f.getName(),
+								false));
 					encodedList.add(Protocols.createEncodeOfFile(f));
-					folderNameList.add(f.getName());
 				}
 			}
 			currentFolder = externalStorage;
 		} else {
 			encodedList.clear();
-			folderNameList.clear();
+			customList.clear();
 		}
-		arrayAdapter.notifyDataSetChanged();
-	}
-
-	@Override
-	public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2,
-			long arg3) {
-		// TODO Auto-generated method stub
-		if (selectedEncodedList.contains(encodedList.get(arg2))) {
-			arg1.setBackgroundColor(Color.TRANSPARENT);
-			selectedEncodedList.remove(encodedList.get(arg2));
-		} else {
-			arg1.setBackgroundColor(Color.BLUE);
-			selectedEncodedList.add(encodedList.get(arg2));
-		}
-		arrayAdapter.notifyDataSetChanged();
-		Toast.makeText(getApplicationContext(), selectedEncodedList.toString(),
-				Toast.LENGTH_SHORT).show();
-		return true;
+		lvMyFolders.setAdapter(new CustomListAdapter(this,
+				R.layout.listitem_layout, customList));
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> arg0, View arg1, int position,
 			long arg3) {
 		// TODO Auto-generated method stub
+
 		File file = new File(Protocols.getFilePathFromEncode(encodedList
 				.get(position)));
 		if (!((!file.isHidden()) && file.exists() && file.canRead()))
@@ -154,69 +141,36 @@ public class Server extends Activity implements OnClickListener,
 		}
 		File[] subFiles = file.listFiles();
 		encodedList.clear();
-		folderNameList.clear();
+		customList.clear();
 		if (subFiles.length != 0) {
 			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
+					if (f.isFile())
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_view_as_list, f.getName(),
+								false));
+					else if (f.isDirectory())
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_collection, f.getName(),
+								false));
 					encodedList.add(Protocols.createEncodeOfFile(f));
-					folderNameList.add(f.getName());
 				}
 			}
 		}
 		currentFolder = file;
-		arrayAdapter.notifyDataSetChanged();
+		updateCheckboxes();
+		lvMyFolders.setAdapter(new CustomListAdapter(this,
+				R.layout.listitem_layout, customList));
 	}
 
-	@Override
-	public void onClick(View v) {
-		// TODO Auto-generated method stub
-		if (v.getId() == R.id.btBack) {
-			// TODO Auto-generated method stub
-			if (currentFolder.getAbsolutePath().equals("/storage")) {
-				Toast.makeText(getApplicationContext(), ".......",
-						Toast.LENGTH_SHORT).show();
-				return;
+	public void updateCheckboxes() {
+		for (String encode : selectedEncodedList) {
+			if (encodedList.contains(encode)) {
+				customList.get(encode.indexOf(encode)).setCheckedState(true);
 			}
-			String parent = currentFolder.getParent();
-			currentFolder = new File(parent);
-			File[] subFiles = currentFolder.listFiles();
-			folderNameList.clear();
-			encodedList.clear();
-			if (subFiles.length == 0)
-				return;
-			for (File f : subFiles) {
-				if ((!f.isHidden()) && f.exists() && f.canRead()) {
-					encodedList.add(Protocols.createEncodeOfFile(f));
-					folderNameList.add(f.getName());
-				}
-			}
-			arrayAdapter.notifyDataSetChanged();
-			lvMyFolders.setBackgroundColor(Color.TRANSPARENT);
 		}
-
-		else if (v.getId() == R.id.btRefresh) {
-			// TODO Auto-generated method stub
-			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
-			tvServerIP.setText(Protocols
-					.convertIntIPtoStringIP(dhcp.serverAddress));
-			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
-					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
-					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
-					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			selectedEncodedList.clear();
-			actualEncodedList.clear();
-			relativeEncodeList.clear();
-			displayToast("refresh complete");
-			arrayAdapter.notifyDataSetChanged();
-		}
-
-		else if (v.getId() == R.id.btUpload) {
-			// TODO Auto-generated method stub
-			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
-			displayToast("selected folders uploaded");
-			displayToast(pathString);
-		}
+		lvMyFolders.setAdapter(new CustomListAdapter(this,
+				R.layout.listitem_layout, customList));
 	}
 
 	class ListenForClientConnection implements Runnable {
@@ -405,6 +359,92 @@ public class Server extends Activity implements OnClickListener,
 
 	public void displayToast(String msg) {
 		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu items for use in the action bar
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.server_actionbar_items, menu);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		super.onOptionsItemSelected(item);
+
+		if (item.getItemId() == R.id.action_back) {
+			if (currentFolder.getAbsolutePath().equals("/storage")) {
+				return true;
+			}
+			String parent = currentFolder.getParent();
+			currentFolder = new File(parent);
+			File[] subFiles = currentFolder.listFiles();
+			customList.clear();
+			encodedList.clear();
+			if (subFiles.length == 0)
+				return true;
+			for (File f : subFiles) {
+				if ((!f.isHidden()) && f.exists() && f.canRead()) {
+					if (f.isFile())
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_view_as_list, f.getName(),
+								false));
+					else if (f.isDirectory())
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_collection, f.getName(),
+								false));
+					encodedList.add(Protocols.createEncodeOfFile(f));
+				}
+			}
+			updateCheckboxes();
+			lvMyFolders.setAdapter(new CustomListAdapter(this,
+					R.layout.listitem_layout, customList));
+			return true;
+
+		} else if (item.getItemId() == R.id.acttion_upload) {
+			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
+			displayToast("selected folders uploaded");
+			displayToast(pathString);
+			return true;
+
+		} else if (item.getItemId() == R.id.action_refresh) {
+			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
+			tvServerIP.setText(Protocols
+					.convertIntIPtoStringIP(dhcp.serverAddress));
+			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+			displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
+					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
+					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
+					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+			selectedEncodedList.clear();
+			actualEncodedList.clear();
+			relativeEncodeList.clear();
+			displayToast("refresh complete");
+			arrayAdapter.notifyDataSetChanged();
+			return true;
+		}
+		return false;
+	}
+
+	public void updateSelectedList(int pos, boolean add) {
+		if (add) {
+			if (selectedEncodedList.contains(encodedList.get(pos)))
+				return;
+			selectedEncodedList.add(encodedList.get(pos));
+			customList.get(pos).setCheckedState(true);
+			Toast.makeText(getApplicationContext(), pos + " added",
+					Toast.LENGTH_SHORT).show();
+		}
+
+		else {
+			if (!(selectedEncodedList.contains(encodedList.get(pos))))
+				return;
+			selectedEncodedList.remove(encodedList.get(pos));
+			customList.get(pos).setCheckedState(false);
+			Toast.makeText(getApplicationContext(), pos + " removed",
+					Toast.LENGTH_SHORT).show();
+		}
 	}
 
 	@Override

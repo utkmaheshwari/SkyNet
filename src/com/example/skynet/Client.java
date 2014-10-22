@@ -23,6 +23,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -31,6 +34,7 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,7 +45,7 @@ public class Client extends Activity implements OnClickListener,
 	WifiManager wifiManager;
 	TextView tvServerIP, tvSelfIP;
 	EditText etIP;
-	Button btConnect, btDownload, btGet, btRefresh, btBack;
+	ImageButton ibConnect;
 	private Socket clientSocket = null;
 	private InputStream is = null;
 	private OutputStream os = null;
@@ -73,20 +77,8 @@ public class Client extends Activity implements OnClickListener,
 		tvServerIP = (TextView) findViewById(R.id.tvServerIP);
 		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
 
-		btRefresh = (Button) findViewById(R.id.btRefresh);
-		btRefresh.setOnClickListener(this);
-
-		btDownload = (Button) findViewById(R.id.btDownload);
-		btDownload.setOnClickListener(this);
-
-		btGet = (Button) findViewById(R.id.btGet);
-		btGet.setOnClickListener(this);
-
-		btConnect = (Button) findViewById(R.id.btConnect);
-		btConnect.setOnClickListener(this);
-
-		btBack = (Button) findViewById(R.id.btBack);
-		btBack.setOnClickListener(this);
+		ibConnect = (ImageButton) findViewById(R.id.ibConnect);
+		ibConnect.setOnClickListener(this);
 
 		etIP = (EditText) findViewById(R.id.etIP);
 
@@ -98,7 +90,7 @@ public class Client extends Activity implements OnClickListener,
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		originalEncodeList = new ArrayList<String>();
-		folderNameList.add("nothing in here....");
+		// folderNameList.add("nothing in here....");
 		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
 				android.R.layout.simple_list_item_1, folderNameList);
 		lvMyFolders.setAdapter(arrayAdapter);
@@ -163,91 +155,7 @@ public class Client extends Activity implements OnClickListener,
 	@Override
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
-		if (v.getId() == R.id.btRefresh) {
-			// TODO Auto-generated method stub
-			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
-			tvServerIP.setText(Protocols
-					.convertIntIPtoStringIP(dhcp.serverAddress));
-			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
-					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
-					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
-					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			folderNameList.clear();
-			encodedList.clear();
-			selectedEncodedList.clear();
-			originalEncodeList.clear();
-			arrayAdapter.notifyDataSetChanged();
-			// /////////////////////////////////////////////
-			try {
-				if (clientSocket.isInputShutdown()
-						| clientSocket.isOutputShutdown()
-						| !clientSocket.isConnected() | clientSocket.isClosed())
-					return;
-				dos.flush();
-				os.close();
-				is.close();
-				dos.close();
-				dis.close();
-				bis.close();
-				clientSocket.shutdownOutput();
-				clientSocket.shutdownInput();
-				clientSocket.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			// /////////////////////////////////////////////
-		}
-
-		else if (v.getId() == R.id.btBack) {
-			// TODO Auto-generated method stub
-			// ....................................................................
-			// ....................................................................
-			// ...................patch to solve the back
-			// issue...................
-
-			if (originalEncodeList.equals(encodedList))
-				return;
-
-			String s = Protocols.getParentPathFromEncode(encodedList.get(0));
-			for (String originalEncodePath : originalEncodeList) {
-				if (s.equals(Protocols
-						.getFilePathFromEncode(originalEncodePath))) {
-					folderNameList.clear();
-					encodedList.clear();
-					for (String path : originalEncodeList) {
-						folderNameList.add(Protocols
-								.getFileNameFromEncode(path));
-						encodedList.add(path);
-					}
-					currentFolderPath = Protocols.IS_NULL;
-					arrayAdapter.notifyDataSetChanged();
-					return;
-				}
-			}
-			// .....................................................................
-			// .....................................................................
-			// .....................................................................
-			new GetParentFolder().execute(currentFolderPath);
-		}
-
-		else if (v.getId() == R.id.btDownload) {
-			// TODO Auto-generated method stub
-			if (selectedEncodedList.size() == 0)
-				return;
-			String pathString = Protocols
-					.clubBySubSeperator(selectedEncodedList);
-
-			new DownloadFolders().execute(pathString);
-		}
-
-		else if (v.getId() == R.id.btGet) {
-			// TODO Auto-generated method stub
-			new GetFolderList().execute("");
-		}
-
-		else if (v.getId() == R.id.btConnect) {
+		if (v.getId() == R.id.ibConnect) {
 			new ConnectClientToServer().execute(etIP.getText().toString()
 					.trim());
 		}
@@ -325,7 +233,9 @@ public class Client extends Activity implements OnClickListener,
 			try {
 				request = Protocols.clubByMainSeperator(
 						Protocols.GET_FOLDER_LIST, params[0]);
-				if (clientSocket.isClosed())
+				if (clientSocket.isClosed() | clientSocket.isInputShutdown()
+						| clientSocket.isOutputShutdown()
+						| !clientSocket.isConnected())
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
@@ -578,6 +488,94 @@ public class Client extends Activity implements OnClickListener,
 			} else
 				displayToast("downloading failed");
 		}
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu items for use in the action bar
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.client_actionbar_items, menu);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		super.onOptionsItemSelected(item);
+		if (item.getItemId() == R.id.action_back) {
+			if (originalEncodeList.equals(encodedList))
+				return true;
+
+			String s = Protocols.getParentPathFromEncode(encodedList.get(0));
+			for (String originalEncodePath : originalEncodeList) {
+				if (s.equals(Protocols
+						.getFilePathFromEncode(originalEncodePath))) {
+					folderNameList.clear();
+					encodedList.clear();
+					for (String path : originalEncodeList) {
+						folderNameList.add(Protocols
+								.getFileNameFromEncode(path));
+						encodedList.add(path);
+					}
+					currentFolderPath = Protocols.IS_NULL;
+					arrayAdapter.notifyDataSetChanged();
+					return true;
+				}
+			}
+			// .....................................................................
+			// .....................................................................
+			// .....................................................................
+			new GetParentFolder().execute(currentFolderPath);
+			return true;
+		}
+
+		else if (item.getItemId() == R.id.action_download) {
+			if (selectedEncodedList.size() == 0)
+				return true;
+			String pathString = Protocols
+					.clubBySubSeperator(selectedEncodedList);
+
+			new DownloadFolders().execute(pathString);
+			return true;
+		} else if (item.getItemId() == R.id.action_getlist) {
+			if (isConnected)
+				new GetFolderList().execute("");
+		} else if (item.getItemId() == R.id.action_refresh) {
+			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
+			tvServerIP.setText(Protocols
+					.convertIntIPtoStringIP(dhcp.serverAddress));
+			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+			displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
+					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
+					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
+					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+			folderNameList.clear();
+			encodedList.clear();
+			selectedEncodedList.clear();
+			originalEncodeList.clear();
+			arrayAdapter.notifyDataSetChanged();
+			// /////////////////////////////////////////////
+			try {
+				if (clientSocket.isInputShutdown()
+						| clientSocket.isOutputShutdown()
+						| !clientSocket.isConnected() | clientSocket.isClosed())
+					return true;
+				dos.flush();
+				os.close();
+				is.close();
+				dos.close();
+				dis.close();
+				bis.close();
+				clientSocket.shutdownOutput();
+				clientSocket.shutdownInput();
+				clientSocket.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return true;
+		}
+		return false;
 	}
 
 	@Override

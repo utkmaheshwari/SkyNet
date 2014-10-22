@@ -16,7 +16,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:text="Server IP"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textColor="@android:color/darker_gray"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TextView
             android:id="@+id/tvServerIP"
@@ -24,7 +25,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="0.0.0.0"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textColor="@android:color/darker_gray"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
     </LinearLayout>
 
     <LinearLayout
@@ -39,7 +41,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:text="Self IP"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textColor="@android:color/darker_gray"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TextView
             android:id="@+id/tvSelfIP"
@@ -47,39 +50,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="0.0.0.0"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textColor="@android:color/darker_gray"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="3" >
-
-        <Button
-            android:id="@+id/btBack"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="back"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <Button
-            android:id="@+id/btRefresh"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Refresh"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <Button
-            android:id="@+id/btUpload"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Upload"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-    </LinearLayout>
+  
 
     <ListView
         android:id="@+id/lvMyFolders"
