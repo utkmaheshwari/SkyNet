@@ -17,6 +17,8 @@ public class Protocols {
 	public static final String START_DOWNLOAD = "14";
 	public static final String MAIN_SEPERATOR = "<";
 	public static final String SUB_SEPERATOR = ">";
+	public static final String FILE = "file";
+	public static final String FOLDER = "folder";
 	public static final String TAG = "folderShare";
 	public static final String IS_NULL = "";
 
@@ -111,24 +113,46 @@ public class Protocols {
 			if (!((!f.isHidden()) && f.canRead() && f.exists()))
 				continue;
 			if (f.isDirectory())
-				dataString = dataString + (long) 0 + f.getAbsolutePath()
-						+ Protocols.SUB_SEPERATOR;
+				dataString = dataString + Protocols.FOLDER
+						+ f.getAbsolutePath() + Protocols.SUB_SEPERATOR;
 			else if (f.isFile())
-				dataString = dataString + f.length() + f.getAbsolutePath()
-						+ Protocols.SUB_SEPERATOR;
+				dataString = dataString + Protocols.FILE
+						+ f.getAbsolutePath() + Protocols.SUB_SEPERATOR;
 		}
 		return dataString.substring(0, dataString.length() - 1);
 	}
 
-	public static String createEncodeOfFile(File f) {
+	/*
+	 * public static String createEncodeOfFile(File f) { if (!((!f.isHidden())
+	 * && f.canRead() && f.exists())) return Protocols.IS_NULL; if
+	 * (f.isDirectory()) return ((long) 0 + f.getAbsolutePath()); else if
+	 * (f.isFile()) return (f.length() + f.getAbsolutePath()); return
+	 * Protocols.IS_NULL; }
+	 */
+
+	public static boolean checkFile(String encode) {
+		if (encode.substring(0, encode.indexOf("/")).equals(Protocols.FILE))
+			return true;
+		else if (encode.substring(0, encode.indexOf("/")).equals(
+				Protocols.FOLDER))
+			return false;
+		return true;
+	}
+
+	public static String createDownloadEncodeOfFile(File f) {
+		if (!((!f.isHidden()) && f.canRead() && f.exists()))
+			return Protocols.IS_NULL;
+		return f.length() + f.getAbsolutePath();
+	}
+
+	public static String createListEncodeOfFile(File f) {
 		if (!((!f.isHidden()) && f.canRead() && f.exists()))
 			return Protocols.IS_NULL;
 		if (f.isDirectory())
-			return ((long) 0 + f.getAbsolutePath());
+			return Protocols.FOLDER + f.getAbsolutePath();
 		else if (f.isFile())
-			return (f.length() + f.getAbsolutePath());
+			return Protocols.FILE + f.getAbsolutePath();
 		return Protocols.IS_NULL;
-
 	}
 
 	public static boolean copyInputStreamToOutputStream(

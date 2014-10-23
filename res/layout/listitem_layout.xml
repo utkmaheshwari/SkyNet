@@ -17,8 +17,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="Medium Text"
-        android:clickable="true"
+        android:text="nothin in here..."
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="@android:color/darker_gray" />
 

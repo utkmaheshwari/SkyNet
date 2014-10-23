@@ -31,8 +31,6 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -60,9 +58,10 @@ public class Client extends Activity implements OnClickListener,
 	private String currentFolderPath = "";
 
 	ListView lvMyFolders;
-	ArrayList<String> folderNameList, encodedList, selectedEncodedList,
+	private ArrayList<CustomListItem> customList;
+	ArrayList<String>  encodedList, selectedEncodedList,
 			originalEncodeList;
-	ArrayAdapter<String> arrayAdapter;
+	private ClientCustomListAdapter customAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -86,14 +85,14 @@ public class Client extends Activity implements OnClickListener,
 		lvMyFolders.setOnItemClickListener(this);
 		lvMyFolders.setOnItemLongClickListener(this);
 
-		folderNameList = new ArrayList<String>();
+		customList = new ArrayList<CustomListItem>();
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		originalEncodeList = new ArrayList<String>();
-		// folderNameList.add("nothing in here....");
-		arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
-				android.R.layout.simple_list_item_1, folderNameList);
-		lvMyFolders.setAdapter(arrayAdapter);
+		
+		customAdapter = new ClientCustomListAdapter(this, R.layout.listitem_layout,
+				customList);
+		lvMyFolders.setAdapter(customAdapter);
 	}
 
 	public void WifiPeriferalInitialization() {
@@ -140,7 +139,7 @@ public class Client extends Activity implements OnClickListener,
 			arg1.setBackgroundColor(Color.BLUE);
 			selectedEncodedList.add(encodedList.get(arg2));
 		}
-		arrayAdapter.notifyDataSetChanged();
+		customAdapter.notifyDataSetChanged();
 		return true;
 	}
 
@@ -148,6 +147,8 @@ public class Client extends Activity implements OnClickListener,
 	public void onItemClick(AdapterView<?> arg0, View arg1, int position,
 			long arg3) {
 		// TODO Auto-generated method stub
+		if(Protocols.checkFile(encodedList.get(position)))
+			return;
 		currentFolderPath = encodedList.get(position);
 		new GetSelectedFolderList().execute(currentFolderPath);
 	}
@@ -158,6 +159,33 @@ public class Client extends Activity implements OnClickListener,
 		if (v.getId() == R.id.ibConnect) {
 			new ConnectClientToServer().execute(etIP.getText().toString()
 					.trim());
+		}
+	}
+	
+	public void updateCheckboxes(int pos) {
+		if (selectedEncodedList.contains(encodedList.get(pos))) {
+			customList.get(pos).setCheckedState(true);
+			customAdapter.notifyDataSetChanged();
+		}
+	}
+	
+	public void updateSelectedList(int pos, boolean add) {
+		if (add) {
+			if (selectedEncodedList.contains(encodedList.get(pos)))
+				return;
+			selectedEncodedList.add(encodedList.get(pos));
+			customList.get(pos).setCheckedState(true);
+			Toast.makeText(getApplicationContext(), pos + " added",
+					Toast.LENGTH_SHORT).show();
+		}
+
+		else {
+			if (!(selectedEncodedList.contains(encodedList.get(pos))))
+				return;
+			selectedEncodedList.remove(encodedList.get(pos));
+			customList.get(pos).setCheckedState(false);
+			Toast.makeText(getApplicationContext(), pos + " removed",
+					Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -246,12 +274,15 @@ public class Client extends Activity implements OnClickListener,
 
 				String[] paths = Protocols.splitBySubSeperator(response);
 				encodedList.clear();
-				folderNameList.clear();
+				customList.clear();
 				originalEncodeList.clear();
 				for (String path : paths) {
 					encodedList.add(path);
-					folderNameList.add(Protocols.getFileNameFromEncode(path));
 					originalEncodeList.add(path);
+					if(Protocols.checkFile(path))
+						customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+					else
+						customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
 				}
 				currentFolderPath = Protocols.IS_NULL;
 				return true;
@@ -268,7 +299,7 @@ public class Client extends Activity implements OnClickListener,
 			super.onPostExecute(result);
 			if (result) {
 				displayToast("folder list fetched");
-				arrayAdapter.notifyDataSetChanged();
+				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("unable to fetch list");
 		}
@@ -307,11 +338,13 @@ public class Client extends Activity implements OnClickListener,
 				else {
 					String[] paths = response.split(Protocols.SUB_SEPERATOR);
 					encodedList.clear();
-					folderNameList.clear();
+					customList.clear();
 					for (String path : paths) {
 						encodedList.add(path);
-						folderNameList.add(Protocols
-								.getFileNameFromEncode(path));
+						if(Protocols.checkFile(path))
+							customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+						else
+							customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
 					}
 					return true;
 				}
@@ -328,7 +361,7 @@ public class Client extends Activity implements OnClickListener,
 			super.onPostExecute(result);
 			if (result) {
 				displayToast("folder list fetched");
-				arrayAdapter.notifyDataSetChanged();
+				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("unable to fetch list");
 		}
@@ -364,17 +397,17 @@ public class Client extends Activity implements OnClickListener,
 				if (response.equals(null) | response.equals(""))
 					return false;
 				else {
-					Long parentFileSize = (long) 0;
 					String[] paths = Protocols.splitBySubSeperator(response);
 					encodedList.clear();
-					folderNameList.clear();
+					customList.clear();
 					for (String path : paths) {
 						encodedList.add(path);
-						folderNameList.add(Protocols
-								.getFileNameFromEncode(path));
-						parentFileSize += Protocols.getFileSizeFromEncode(path);
+						if(Protocols.checkFile(path))
+							customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+						else
+							customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
 					}
-					currentFolderPath = parentFileSize
+					currentFolderPath = (long)0
 							+ Protocols.getParentPathFromEncode(paths[0]);
 					return true;
 				}
@@ -391,7 +424,7 @@ public class Client extends Activity implements OnClickListener,
 			super.onPostExecute(result);
 			if (result) {
 				displayToast("folder list fetched");
-				arrayAdapter.notifyDataSetChanged();
+				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("unable to fetch list");
 		}
@@ -461,7 +494,6 @@ public class Client extends Activity implements OnClickListener,
 					bos.close();
 					publishProgress(file.getName() + " downloaded");
 				}
-				publishProgress("download complete");
 				selectedEncodedList.clear();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -484,7 +516,7 @@ public class Client extends Activity implements OnClickListener,
 			super.onPostExecute(result);
 			if (result) {
 				displayToast("downloading complete");
-				arrayAdapter.notifyDataSetChanged();
+				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("downloading failed");
 		}
@@ -509,15 +541,17 @@ public class Client extends Activity implements OnClickListener,
 			for (String originalEncodePath : originalEncodeList) {
 				if (s.equals(Protocols
 						.getFilePathFromEncode(originalEncodePath))) {
-					folderNameList.clear();
+					customList.clear();
 					encodedList.clear();
 					for (String path : originalEncodeList) {
-						folderNameList.add(Protocols
-								.getFileNameFromEncode(path));
+						if(Protocols.checkFile(path))
+							customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+						else
+							customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
 						encodedList.add(path);
 					}
 					currentFolderPath = Protocols.IS_NULL;
-					arrayAdapter.notifyDataSetChanged();
+					customAdapter.notifyDataSetChanged();
 					return true;
 				}
 			}
@@ -548,11 +582,11 @@ public class Client extends Activity implements OnClickListener,
 					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
 					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
 					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			folderNameList.clear();
+			customList.clear();
 			encodedList.clear();
 			selectedEncodedList.clear();
 			originalEncodeList.clear();
-			arrayAdapter.notifyDataSetChanged();
+			customAdapter.notifyDataSetChanged();
 			// /////////////////////////////////////////////
 			try {
 				if (clientSocket.isInputShutdown()

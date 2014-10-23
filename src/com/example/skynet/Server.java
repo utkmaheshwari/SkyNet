@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -28,9 +27,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,7 +35,6 @@ import android.widget.Toast;
 public class Server extends Activity implements OnItemClickListener {
 
 	TextView tvServerIP, tvSelfIP;
-
 	private WifiManager wifiManager;
 	private static final String TAG = "wifi";
 	private static final int PORTNUMBER = 9999;
@@ -50,9 +45,7 @@ public class Server extends Activity implements OnItemClickListener {
 	private ArrayList<CustomListItem> customList;
 	private ArrayList<String> encodedList, selectedEncodedList,
 			actualEncodedList, relativeEncodeList;
-	private ArrayAdapter<CustomListAdapter> arrayAdapter;
-	public OnCheckedChangeListener onCheckedChangeListener;
-	public OnItemClickListener onItemClickListener;
+	private ServerCustomListAdapter customAdapter;
 	private File currentFolder = null;
 
 	@Override
@@ -84,18 +77,16 @@ public class Server extends Activity implements OnItemClickListener {
 		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
 
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
-		lvMyFolders.setOnItemClickListener(this);
 
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		actualEncodedList = new ArrayList<String>();
 		relativeEncodeList = new ArrayList<String>();
 		customList = new ArrayList<CustomListItem>();
-		/*
-		 * arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),
-		 * android.R.layout.simple_list_item_1, folderNameList);
-		 * lvMyFolders.setAdapter(arrayAdapter);
-		 */
+		customAdapter = new ServerCustomListAdapter(this,
+				R.layout.listitem_layout, customList);
+		lvMyFolders.setAdapter(customAdapter);
+		lvMyFolders.setOnItemClickListener(this);
 
 		if (Environment.MEDIA_MOUNTED.equals(Environment
 				.getExternalStorageState())) {
@@ -114,7 +105,7 @@ public class Server extends Activity implements OnItemClickListener {
 						customList.add(new CustomListItem(
 								R.drawable.ic_action_collection, f.getName(),
 								false));
-					encodedList.add(Protocols.createEncodeOfFile(f));
+					encodedList.add(Protocols.createListEncodeOfFile(f));
 				}
 			}
 			currentFolder = externalStorage;
@@ -122,8 +113,7 @@ public class Server extends Activity implements OnItemClickListener {
 			encodedList.clear();
 			customList.clear();
 		}
-		lvMyFolders.setAdapter(new CustomListAdapter(this,
-				R.layout.listitem_layout, customList));
+		customAdapter.notifyDataSetChanged();
 	}
 
 	@Override
@@ -153,24 +143,19 @@ public class Server extends Activity implements OnItemClickListener {
 						customList.add(new CustomListItem(
 								R.drawable.ic_action_collection, f.getName(),
 								false));
-					encodedList.add(Protocols.createEncodeOfFile(f));
+					encodedList.add(Protocols.createListEncodeOfFile(f));
 				}
 			}
 		}
 		currentFolder = file;
-		updateCheckboxes();
-		lvMyFolders.setAdapter(new CustomListAdapter(this,
-				R.layout.listitem_layout, customList));
+		customAdapter.notifyDataSetChanged();
 	}
 
-	public void updateCheckboxes() {
-		for (String encode : selectedEncodedList) {
-			if (encodedList.contains(encode)) {
-				customList.get(encode.indexOf(encode)).setCheckedState(true);
-			}
+	public void updateCheckboxes(int pos) {
+		if (selectedEncodedList.contains(encodedList.get(pos))) {
+			customList.get(pos).setCheckedState(true);
+			customAdapter.notifyDataSetChanged();
 		}
-		lvMyFolders.setAdapter(new CustomListAdapter(this,
-				R.layout.listitem_layout, customList));
 	}
 
 	class ListenForClientConnection implements Runnable {
@@ -299,7 +284,7 @@ public class Server extends Activity implements OnItemClickListener {
 						for (String encode : actualEncodedList) {
 							File f = new File(
 									Protocols.getFilePathFromEncode(encode));
-							if (!((!f.isHidden()) && f.exists() && f.canRead()))
+							if (!((!f.isHidden()) && f.exists() && f.canRead()&&(f.length()!=0)))
 								continue;
 							BufferedInputStream bis = new BufferedInputStream(
 									new FileInputStream(f));
@@ -344,7 +329,7 @@ public class Server extends Activity implements OnItemClickListener {
 			if (!((!f.isHidden()) && f.canRead() && f.exists()))
 				return;
 			if (f.isFile()) {
-				actualEncodedList.add(Protocols.createEncodeOfFile(f));
+				actualEncodedList.add(Protocols.createDownloadEncodeOfFile(f));
 				relativeEncodeList.add(Protocols.produceRelativePathEcodes(f,
 						filePath));
 			} else if (f.isDirectory()) {
@@ -394,12 +379,10 @@ public class Server extends Activity implements OnItemClickListener {
 						customList.add(new CustomListItem(
 								R.drawable.ic_action_collection, f.getName(),
 								false));
-					encodedList.add(Protocols.createEncodeOfFile(f));
+					encodedList.add(Protocols.createListEncodeOfFile(f));
 				}
 			}
-			updateCheckboxes();
-			lvMyFolders.setAdapter(new CustomListAdapter(this,
-					R.layout.listitem_layout, customList));
+			customAdapter.notifyDataSetChanged();
 			return true;
 
 		} else if (item.getItemId() == R.id.acttion_upload) {
@@ -421,7 +404,7 @@ public class Server extends Activity implements OnItemClickListener {
 			actualEncodedList.clear();
 			relativeEncodeList.clear();
 			displayToast("refresh complete");
-			arrayAdapter.notifyDataSetChanged();
+			customAdapter.notifyDataSetChanged();
 			return true;
 		}
 		return false;
