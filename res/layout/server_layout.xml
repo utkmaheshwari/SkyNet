@@ -6,7 +6,6 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:descendantFocusability="blocksDescendants"
     android:orientation="vertical" >
 
     <LinearLayout
@@ -59,6 +58,10 @@
             android:textColor="@android:color/darker_gray" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:descendantFocusability="blocksDescendants" >
     <ListView
         android:id="@+id/lvMyFolders"
         android:layout_width="fill_parent"
@@ -67,5 +70,6 @@
         android:fastScrollEnabled="true"
         android:smoothScrollbar="true" >
     </ListView>
+    </LinearLayout>
 
 </LinearLayout>

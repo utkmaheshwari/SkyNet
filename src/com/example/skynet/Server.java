@@ -36,7 +36,7 @@ public class Server extends Activity implements OnItemClickListener {
 
 	TextView tvServerIP, tvSelfIP;
 	private WifiManager wifiManager;
-	private static final String TAG = "wifi";
+	private static final String TAG = "folderShare";
 	private static final int PORTNUMBER = 9999;
 	private String response = "", request = "";
 	private String pathString = "";
@@ -76,15 +76,16 @@ public class Server extends Activity implements OnItemClickListener {
 		tvServerIP = (TextView) findViewById(R.id.tvServerIP);
 		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
 
-		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
-
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		actualEncodedList = new ArrayList<String>();
 		relativeEncodeList = new ArrayList<String>();
+		
 		customList = new ArrayList<CustomListItem>();
 		customAdapter = new ServerCustomListAdapter(this,
 				R.layout.listitem_layout, customList);
+		
+		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setAdapter(customAdapter);
 		lvMyFolders.setOnItemClickListener(this);
 

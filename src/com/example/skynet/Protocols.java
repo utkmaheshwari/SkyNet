@@ -122,14 +122,6 @@ public class Protocols {
 		return dataString.substring(0, dataString.length() - 1);
 	}
 
-	/*
-	 * public static String createEncodeOfFile(File f) { if (!((!f.isHidden())
-	 * && f.canRead() && f.exists())) return Protocols.IS_NULL; if
-	 * (f.isDirectory()) return ((long) 0 + f.getAbsolutePath()); else if
-	 * (f.isFile()) return (f.length() + f.getAbsolutePath()); return
-	 * Protocols.IS_NULL; }
-	 */
-
 	public static boolean checkFile(String encode) {
 		if (encode.substring(0, encode.indexOf("/")).equals(Protocols.FILE))
 			return true;
@@ -171,10 +163,7 @@ public class Protocols {
 				outputStream.flush();
 				fileSize -= len;
 			}
-			// while ((len = inputStream.read(buffer)) != -1) {
-			// Log.i(TAG, "writing " + len + buffer.toString());
-			// outputStream.write(buffer, 0, len);
-			// }
+			
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

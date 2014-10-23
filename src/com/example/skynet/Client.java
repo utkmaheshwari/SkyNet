@@ -16,7 +16,6 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -30,7 +29,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -38,7 +36,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class Client extends Activity implements OnClickListener,
-		OnItemClickListener, OnItemLongClickListener {
+		OnItemClickListener{
 
 	WifiManager wifiManager;
 	TextView tvServerIP, tvSelfIP;
@@ -51,7 +49,7 @@ public class Client extends Activity implements OnClickListener,
 	private DataOutputStream dos = null;
 	private BufferedInputStream bis = null;
 
-	private static final String TAG = "wifi";
+	private static final String TAG = "folderShare";
 	private static final int PORTNUMBER = 9999;
 	private String response, request;
 	private static volatile boolean isConnected = false;
@@ -83,7 +81,7 @@ public class Client extends Activity implements OnClickListener,
 
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setOnItemClickListener(this);
-		lvMyFolders.setOnItemLongClickListener(this);
+		
 
 		customList = new ArrayList<CustomListItem>();
 		encodedList = new ArrayList<String>();
@@ -125,22 +123,6 @@ public class Client extends Activity implements OnClickListener,
 
 	public void displayToast(String msg) {
 		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
-	}
-
-	@Override
-	public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2,
-			long arg3) {
-		// TODO Auto-generated method stub
-		if (selectedEncodedList.contains(encodedList.get(arg2))) {
-			arg1.setBackgroundColor(Color.TRANSPARENT);
-			selectedEncodedList.remove(encodedList.get(arg2));
-
-		} else {
-			arg1.setBackgroundColor(Color.BLUE);
-			selectedEncodedList.add(encodedList.get(arg2));
-		}
-		customAdapter.notifyDataSetChanged();
-		return true;
 	}
 
 	@Override
