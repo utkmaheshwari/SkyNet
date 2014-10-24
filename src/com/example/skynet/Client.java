@@ -14,13 +14,20 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,11 +39,12 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class Client extends Activity implements OnClickListener,
-		OnItemClickListener{
+		OnItemClickListener {
 
 	WifiManager wifiManager;
 	TextView tvServerIP, tvSelfIP;
@@ -57,8 +65,7 @@ public class Client extends Activity implements OnClickListener,
 
 	ListView lvMyFolders;
 	private ArrayList<CustomListItem> customList;
-	ArrayList<String>  encodedList, selectedEncodedList,
-			originalEncodeList;
+	ArrayList<String> encodedList, selectedEncodedList, originalEncodeList;
 	private ClientCustomListAdapter customAdapter;
 
 	@Override
@@ -81,15 +88,14 @@ public class Client extends Activity implements OnClickListener,
 
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setOnItemClickListener(this);
-		
 
 		customList = new ArrayList<CustomListItem>();
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		originalEncodeList = new ArrayList<String>();
-		
-		customAdapter = new ClientCustomListAdapter(this, R.layout.listitem_layout,
-				customList);
+
+		customAdapter = new ClientCustomListAdapter(this,
+				R.layout.listitem_layout, customList);
 		lvMyFolders.setAdapter(customAdapter);
 	}
 
@@ -129,7 +135,7 @@ public class Client extends Activity implements OnClickListener,
 	public void onItemClick(AdapterView<?> arg0, View arg1, int position,
 			long arg3) {
 		// TODO Auto-generated method stub
-		if(Protocols.checkFile(encodedList.get(position)))
+		if (Protocols.checkFile(encodedList.get(position)))
 			return;
 		currentFolderPath = encodedList.get(position);
 		new GetSelectedFolderList().execute(currentFolderPath);
@@ -143,14 +149,14 @@ public class Client extends Activity implements OnClickListener,
 					.trim());
 		}
 	}
-	
+
 	public void updateCheckboxes(int pos) {
 		if (selectedEncodedList.contains(encodedList.get(pos))) {
 			customList.get(pos).setCheckedState(true);
 			customAdapter.notifyDataSetChanged();
 		}
 	}
-	
+
 	public void updateSelectedList(int pos, boolean add) {
 		if (add) {
 			if (selectedEncodedList.contains(encodedList.get(pos)))
@@ -261,10 +267,14 @@ public class Client extends Activity implements OnClickListener,
 				for (String path : paths) {
 					encodedList.add(path);
 					originalEncodeList.add(path);
-					if(Protocols.checkFile(path))
-						customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+					if (Protocols.checkFile(path))
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_view_as_list, Protocols
+										.getFileNameFromEncode(path), false));
 					else
-						customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
+						customList.add(new CustomListItem(
+								R.drawable.ic_action_collection, Protocols
+										.getFileNameFromEncode(path), false));
 				}
 				currentFolderPath = Protocols.IS_NULL;
 				return true;
@@ -323,10 +333,18 @@ public class Client extends Activity implements OnClickListener,
 					customList.clear();
 					for (String path : paths) {
 						encodedList.add(path);
-						if(Protocols.checkFile(path))
-							customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+						if (Protocols.checkFile(path))
+							customList.add(new CustomListItem(
+									R.drawable.ic_action_view_as_list,
+									Protocols.getFileNameFromEncode(path),
+									false));
 						else
-							customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
+							customList
+									.add(new CustomListItem(
+											R.drawable.ic_action_collection,
+											Protocols
+													.getFileNameFromEncode(path),
+											false));
 					}
 					return true;
 				}
@@ -384,12 +402,20 @@ public class Client extends Activity implements OnClickListener,
 					customList.clear();
 					for (String path : paths) {
 						encodedList.add(path);
-						if(Protocols.checkFile(path))
-							customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+						if (Protocols.checkFile(path))
+							customList.add(new CustomListItem(
+									R.drawable.ic_action_view_as_list,
+									Protocols.getFileNameFromEncode(path),
+									false));
 						else
-							customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
+							customList
+									.add(new CustomListItem(
+											R.drawable.ic_action_collection,
+											Protocols
+													.getFileNameFromEncode(path),
+											false));
 					}
-					currentFolderPath = (long)0
+					currentFolderPath = (long) 0
 							+ Protocols.getParentPathFromEncode(paths[0]);
 					return true;
 				}
@@ -420,11 +446,41 @@ public class Client extends Activity implements OnClickListener,
 	}
 
 	class DownloadFolders extends AsyncTask<String, String, Boolean> {
+		NotificationCompat.Builder nb;
+		NotificationManager nm;
+		RemoteViews rv;
+		Intent i;
+		PendingIntent pi;
+		ProgressDialog progressDialog;
+
+		@SuppressLint("NewApi")
 		@Override
 		protected void onPreExecute() {
 			// TODO Auto-generated method stub
 			super.onPreExecute();
-			displayToast("downloading files");
+			nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			nm.cancel(1);
+			nb = new NotificationCompat.Builder(getApplicationContext());
+			rv = new RemoteViews("com.example.skynet",
+					R.layout.starting_ending_notification_layout);
+			rv.setTextViewText(R.id.tv1, "Receiving Files");
+			i = new Intent(getApplicationContext(), Client.class);
+			i.setAction(Intent.ACTION_MAIN);
+			i.addCategory(Intent.CATEGORY_LAUNCHER);
+			pi = PendingIntent.getActivity(getApplicationContext(), 0, i, 0);
+
+			nb.setContent(rv).setContentIntent(pi)
+					.setTicker("Preparing for File Transfer....")
+					.setSmallIcon(R.drawable.notification_icon_animation)
+					.setDefaults(Notification.DEFAULT_ALL);
+
+			nm.notify(1, nb.build());
+
+			// progressDialog=new ProgressDialog(getApplicationContext());
+			// progressDialog.setCancelable(false);
+			// progressDialog.setContentView(R.layout.starting_ending_notification_layout);
+			// progressDialog.show();
+			// displayToast("downloading files");
 		}
 
 		@Override
@@ -437,7 +493,7 @@ public class Client extends Activity implements OnClickListener,
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
-				publishProgress("PREPARING FOR DOWNLOAD");
+				// publishProgress("PREPARING FOR DOWNLOAD");
 
 				File mainFolder = new File(
 						Environment.getExternalStorageDirectory() + "/"
@@ -446,7 +502,7 @@ public class Client extends Activity implements OnClickListener,
 					mainFolder.mkdirs();
 
 				response = dis.readUTF();
-				publishProgress(response);
+				// publishProgress(response);
 				final String[] encodes = Protocols
 						.splitBySubSeperator(response);
 				for (String encode : encodes) {
@@ -464,19 +520,38 @@ public class Client extends Activity implements OnClickListener,
 				dos.writeUTF(request);
 				dos.flush();
 
+				/*
+				 * .setLights(0xff0000ff, 2000, 1000)
+				 * .setVibrate(vibratePattern) .setSound( RingtoneManager
+				 * .getDefaultUri(Notification.DEFAULT_SOUND))
+				 */
+
+				nb = new NotificationCompat.Builder(getApplicationContext());
+				rv = new RemoteViews("com.example.skynet",
+						R.layout.ongoing_notification_layout);
+				nb.setContent(rv).setContentIntent(pi)
+						.setSmallIcon(R.drawable.notification_icon_animation)
+						.setLights(Notification.DEFAULT_LIGHTS, 2000, 1000)
+						.setOngoing(true);
+
+				int x = 0;
 				for (String encode : encodes) {
 					File file = new File(mainFolder.getAbsoluteFile()
 							+ Protocols.getParentPathFromEncode(encode),
 							Protocols.getFileNameFromEncode(encode));
+					String[] progress = { file.getName(), "" + encodes.length,
+							"" + x };
+					++x;
+					publishProgress(progress);
 					BufferedOutputStream bos = new BufferedOutputStream(
 							new FileOutputStream(file));
 					Protocols.copyInputStreamToOutputStream(bis, bos,
 							Protocols.getFileSizeFromEncode(encode));
 					bos.flush();
 					bos.close();
-					publishProgress(file.getName() + " downloaded");
 				}
 				selectedEncodedList.clear();
+
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -485,22 +560,49 @@ public class Client extends Activity implements OnClickListener,
 			return true;
 		}
 
+		@SuppressLint("NewApi")
 		@Override
 		protected void onProgressUpdate(String... values) {
 			// TODO Auto-generated method stub
 			super.onProgressUpdate(values);
+			nm.cancel(1);
+			rv.setProgressBar(R.id.pb, Integer.parseInt(values[1]),
+					Integer.parseInt(values[2]), false);
+			// name of the file does not display..........
+			rv.setTextViewText(R.id.tvX, "Downloading " + values[0]);
+			//............................................
+			nm.notify(2, nb.build());
 			displayToast(values[0]);
 		}
 
+		@SuppressLint("NewApi")
 		@Override
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
+			nm.cancel(2);
+			nb = new NotificationCompat.Builder(getApplicationContext());
+			rv = new RemoteViews("com.example.skynet",
+					R.layout.starting_ending_notification_layout);
 			if (result) {
+
+				rv.setTextViewText(R.id.tv1, "File Transfer Completed");
+				nb.setContent(rv).setContentIntent(pi)
+						.setTicker("Download Complete...")
+						.setDefaults(Notification.DEFAULT_ALL)
+						.setSmallIcon(R.drawable.ic_action_download);
+
 				displayToast("downloading complete");
 				customAdapter.notifyDataSetChanged();
-			} else
+			} else {
+				rv.setTextViewText(R.id.tv1, "File Transfer Completed");
+				nb.setContent(rv).setContentIntent(pi)
+						.setTicker("Download Complete...")
+						.setDefaults(Notification.DEFAULT_ALL)
+						.setSmallIcon(R.drawable.ic_action_download);
 				displayToast("downloading failed");
+			}
+			nm.notify(3, nb.build());
 		}
 	}
 
@@ -526,10 +628,18 @@ public class Client extends Activity implements OnClickListener,
 					customList.clear();
 					encodedList.clear();
 					for (String path : originalEncodeList) {
-						if(Protocols.checkFile(path))
-							customList.add(new CustomListItem(R.drawable.ic_action_view_as_list, Protocols.getFileNameFromEncode(path), false));
+						if (Protocols.checkFile(path))
+							customList.add(new CustomListItem(
+									R.drawable.ic_action_view_as_list,
+									Protocols.getFileNameFromEncode(path),
+									false));
 						else
-							customList.add(new CustomListItem(R.drawable.ic_action_collection, Protocols.getFileNameFromEncode(path), false));
+							customList
+									.add(new CustomListItem(
+											R.drawable.ic_action_collection,
+											Protocols
+													.getFileNameFromEncode(path),
+											false));
 						encodedList.add(path);
 					}
 					currentFolderPath = Protocols.IS_NULL;
