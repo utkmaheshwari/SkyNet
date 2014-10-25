@@ -12,10 +12,11 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -127,7 +128,7 @@ public class Server extends Activity implements OnItemClickListener {
 		if (!((!file.isHidden()) && file.exists() && file.canRead()))
 			return;
 		if (file.isFile()) {
-			displayToast("is file");
+//			displayToast("is file");
 			return;
 		}
 		File[] subFiles = file.listFiles();
@@ -389,7 +390,7 @@ public class Server extends Activity implements OnItemClickListener {
 		} else if (item.getItemId() == R.id.acttion_upload) {
 			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
 			displayToast("selected folders uploaded");
-			displayToast(pathString);
+//			displayToast(pathString);
 			return true;
 
 		} else if (item.getItemId() == R.id.action_refresh) {
@@ -431,6 +432,28 @@ public class Server extends Activity implements OnItemClickListener {
 		}
 	}
 
+	public void onBackPressed() {
+		new AlertDialog.Builder(Server.this)
+				.setCancelable(false)
+				.setIcon(R.drawable.icon_skynet)
+				.setTitle("Logout")
+				.setMessage("Would you like to exit ?")
+				.setPositiveButton("Yes",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+									int which) {								
+								finish(); // Call finish here.
+							}
+						})
+				.setNegativeButton("No", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						// user doesn't want to logout
+						Toast.makeText(getApplicationContext(), "welcome back",
+								Toast.LENGTH_LONG).show();
+					}
+				}).show();
+	}
+	
 	@Override
 	protected void onDestroy() {
 		// TODO Auto-generated method stub

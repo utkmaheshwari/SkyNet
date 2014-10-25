@@ -16,12 +16,15 @@ import java.util.ArrayList;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -34,12 +37,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,6 +66,8 @@ public class Client extends Activity implements OnClickListener,
 	private String response, request;
 	private static volatile boolean isConnected = false;
 	private String currentFolderPath = "";
+
+	ProgressDialog progressDialog;
 
 	ListView lvMyFolders;
 	private ArrayList<CustomListItem> customList;
@@ -163,8 +169,8 @@ public class Client extends Activity implements OnClickListener,
 				return;
 			selectedEncodedList.add(encodedList.get(pos));
 			customList.get(pos).setCheckedState(true);
-			Toast.makeText(getApplicationContext(), pos + " added",
-					Toast.LENGTH_SHORT).show();
+			// Toast.makeText(getApplicationContext(), pos + " added",
+			// Toast.LENGTH_SHORT).show();
 		}
 
 		else {
@@ -172,8 +178,8 @@ public class Client extends Activity implements OnClickListener,
 				return;
 			selectedEncodedList.remove(encodedList.get(pos));
 			customList.get(pos).setCheckedState(false);
-			Toast.makeText(getApplicationContext(), pos + " removed",
-					Toast.LENGTH_SHORT).show();
+			// Toast.makeText(getApplicationContext(), pos + " removed",
+			// Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -290,7 +296,7 @@ public class Client extends Activity implements OnClickListener,
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
 			if (result) {
-				displayToast("folder list fetched");
+				// displayToast("folder list fetched");
 				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("unable to fetch list");
@@ -360,7 +366,7 @@ public class Client extends Activity implements OnClickListener,
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
 			if (result) {
-				displayToast("folder list fetched");
+				// displayToast("folder list fetched");
 				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("unable to fetch list");
@@ -431,7 +437,7 @@ public class Client extends Activity implements OnClickListener,
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
 			if (result) {
-				displayToast("folder list fetched");
+				// displayToast("folder list fetched");
 				customAdapter.notifyDataSetChanged();
 			} else
 				displayToast("unable to fetch list");
@@ -448,39 +454,47 @@ public class Client extends Activity implements OnClickListener,
 	class DownloadFolders extends AsyncTask<String, String, Boolean> {
 		NotificationCompat.Builder nb;
 		NotificationManager nm;
-		RemoteViews rv;
 		Intent i;
 		PendingIntent pi;
-		ProgressDialog progressDialog;
 
 		@SuppressLint("NewApi")
 		@Override
 		protected void onPreExecute() {
 			// TODO Auto-generated method stub
 			super.onPreExecute();
+
 			nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			nm.cancel(1);
 			nb = new NotificationCompat.Builder(getApplicationContext());
-			rv = new RemoteViews("com.example.skynet",
-					R.layout.starting_ending_notification_layout);
-			rv.setTextViewText(R.id.tv1, "Receiving Files");
+
 			i = new Intent(getApplicationContext(), Client.class);
 			i.setAction(Intent.ACTION_MAIN);
 			i.addCategory(Intent.CATEGORY_LAUNCHER);
 			pi = PendingIntent.getActivity(getApplicationContext(), 0, i, 0);
 
-			nb.setContent(rv).setContentIntent(pi)
-					.setTicker("Preparing for File Transfer....")
+			nb.setContentIntent(pi)
+					.setLargeIcon(
+							BitmapFactory.decodeResource(getResources(),
+									R.drawable.icon_skynet))
+					.setContentTitle("Skynet")
+					.setContentText("preparing files for download")
+					.setTicker("preparing for file transfer")
 					.setSmallIcon(R.drawable.notification_icon_animation)
-					.setDefaults(Notification.DEFAULT_ALL);
+					.setDefaults(Notification.DEFAULT_ALL)
+					.setOnlyAlertOnce(true).setOngoing(true);
+
+			progressDialog = new ProgressDialog(Client.this);
+			progressDialog.setCancelable(false);
+			progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+			progressDialog.setTitle("Skynet : Downloading Files....");
+			progressDialog.setMessage("preparing files for download");
+			progressDialog.setIcon(R.drawable.ic_action_download_dark);
+			progressDialog.setMax(100);
 
 			nm.notify(1, nb.build());
+			progressDialog.show();
+			nb.setContentTitle("Skynet : Downloading");
 
-			// progressDialog=new ProgressDialog(getApplicationContext());
-			// progressDialog.setCancelable(false);
-			// progressDialog.setContentView(R.layout.starting_ending_notification_layout);
-			// progressDialog.show();
-			// displayToast("downloading files");
 		}
 
 		@Override
@@ -519,29 +533,18 @@ public class Client extends Activity implements OnClickListener,
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
+				
+				// ***********************************************
+				progressDialog.setMax(encodes.length);
+				// ************************************
 
-				/*
-				 * .setLights(0xff0000ff, 2000, 1000)
-				 * .setVibrate(vibratePattern) .setSound( RingtoneManager
-				 * .getDefaultUri(Notification.DEFAULT_SOUND))
-				 */
-
-				nb = new NotificationCompat.Builder(getApplicationContext());
-				rv = new RemoteViews("com.example.skynet",
-						R.layout.ongoing_notification_layout);
-				nb.setContent(rv).setContentIntent(pi)
-						.setSmallIcon(R.drawable.notification_icon_animation)
-						.setLights(Notification.DEFAULT_LIGHTS, 2000, 1000)
-						.setOngoing(true);
-
-				int x = 0;
+				int x = 1;
 				for (String encode : encodes) {
 					File file = new File(mainFolder.getAbsoluteFile()
 							+ Protocols.getParentPathFromEncode(encode),
 							Protocols.getFileNameFromEncode(encode));
 					String[] progress = { file.getName(), "" + encodes.length,
 							"" + x };
-					++x;
 					publishProgress(progress);
 					BufferedOutputStream bos = new BufferedOutputStream(
 							new FileOutputStream(file));
@@ -549,8 +552,10 @@ public class Client extends Activity implements OnClickListener,
 							Protocols.getFileSizeFromEncode(encode));
 					bos.flush();
 					bos.close();
+					++x;
 				}
 				selectedEncodedList.clear();
+				progressDialog.cancel();
 
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -565,14 +570,12 @@ public class Client extends Activity implements OnClickListener,
 		protected void onProgressUpdate(String... values) {
 			// TODO Auto-generated method stub
 			super.onProgressUpdate(values);
-			nm.cancel(1);
-			rv.setProgressBar(R.id.pb, Integer.parseInt(values[1]),
+			String text = values[2] + "/" + values[1];
+			nb.setContentText(text).setProgress(Integer.parseInt(values[1]),
 					Integer.parseInt(values[2]), false);
-			// name of the file does not display..........
-			rv.setTextViewText(R.id.tvX, "Downloading " + values[0]);
-			//............................................
-			nm.notify(2, nb.build());
-			displayToast(values[0]);
+			nm.notify(1, nb.build());
+			progressDialog.setMessage(values[0]);
+			progressDialog.incrementProgressBy(1);
 		}
 
 		@SuppressLint("NewApi")
@@ -580,29 +583,30 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			nm.cancel(2);
+			// progressDialog.cancel();
+			nm.cancel(1);
+			// uncheckAllChildrenCascade(lvMyFolders);
 			nb = new NotificationCompat.Builder(getApplicationContext());
-			rv = new RemoteViews("com.example.skynet",
-					R.layout.starting_ending_notification_layout);
+			nb.setContentIntent(pi)
+					.setLargeIcon(
+							BitmapFactory.decodeResource(getResources(),
+									R.drawable.icon_skynet))
+					.setDefaults(Notification.DEFAULT_ALL)
+					.setSmallIcon(R.drawable.ic_action_download)
+					.setContentText(
+							"Press notification to go back to application");
 			if (result) {
-
-				rv.setTextViewText(R.id.tv1, "File Transfer Completed");
-				nb.setContent(rv).setContentIntent(pi)
-						.setTicker("Download Complete...")
-						.setDefaults(Notification.DEFAULT_ALL)
-						.setSmallIcon(R.drawable.ic_action_download);
+				nb.setTicker("Download Successful...").setContentTitle(
+						"Download Complete");
 
 				displayToast("downloading complete");
 				customAdapter.notifyDataSetChanged();
 			} else {
-				rv.setTextViewText(R.id.tv1, "File Transfer Completed");
-				nb.setContent(rv).setContentIntent(pi)
-						.setTicker("Download Complete...")
-						.setDefaults(Notification.DEFAULT_ALL)
-						.setSmallIcon(R.drawable.ic_action_download);
+				nb.setTicker("Download Unsuccessful...").setContentTitle(
+						"Download Incomplete");
 				displayToast("downloading failed");
 			}
-			nm.notify(3, nb.build());
+			nm.notify(2, nb.build());
 		}
 	}
 
@@ -702,6 +706,38 @@ public class Client extends Activity implements OnClickListener,
 			return true;
 		}
 		return false;
+	}
+
+	private void uncheckAllChildrenCascade(ViewGroup vg) {
+		for (int i = 0; i < vg.getChildCount(); i++) {
+			View v = vg.getChildAt(i);
+			if (v instanceof CheckBox) {
+				((CheckBox) v).setChecked(false);
+			} else if (v instanceof ViewGroup) {
+				uncheckAllChildrenCascade((ViewGroup) v);
+			}
+		}
+	}
+
+	public void onBackPressed() {
+		new AlertDialog.Builder(Client.this)
+				.setCancelable(false)
+				.setIcon(R.drawable.icon_skynet)
+				.setTitle("Logout")
+				.setMessage("Would you like to exit ?")
+				.setPositiveButton("Yes",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+									int which) {
+								finish(); // Call finish here.
+							}
+						})
+				.setNegativeButton("No", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						// user doesn't want to logout
+						displayToast("welcome back");
+					}
+				}).show();
 	}
 
 	@Override
