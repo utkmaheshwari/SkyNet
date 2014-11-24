@@ -12,11 +12,11 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -35,8 +35,9 @@ import android.widget.Toast;
 @SuppressLint("DefaultLocale")
 public class Server extends Activity implements OnItemClickListener {
 
-	TextView tvServerIP, tvSelfIP;
+	TextView tvServerIP, tvSelfIP, tvServerIpAddress, tvSelfIpAddress;
 	private WifiManager wifiManager;
+	private DhcpInfo dhcpInfo;
 	private static final String TAG = "folderShare";
 	private static final int PORTNUMBER = 9999;
 	private String response = "", request = "";
@@ -55,37 +56,50 @@ public class Server extends Activity implements OnItemClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.server_layout);
 		new Thread(new ListenForClientConnection()).start();
-		UIInitialization();
 		wifiPeriferalInitialization();
+		UIInitialization();
 	}
 
 	public void wifiPeriferalInitialization() {
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		final DhcpInfo dhcp = wifiManager.getDhcpInfo();
-
-		tvServerIP
-				.setText(Protocols.convertIntIPtoStringIP(dhcp.serverAddress));
-		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-
-		displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
-				+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
-				+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress) + ":"
-				+ Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+		dhcpInfo = wifiManager.getDhcpInfo();
 	}
 
 	public void UIInitialization() {
+
 		tvServerIP = (TextView) findViewById(R.id.tvServerIP);
 		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
+		tvServerIpAddress = (TextView) findViewById(R.id.tvServerIpAddress);
+		tvSelfIpAddress = (TextView) findViewById(R.id.tvSelfIPAddress);
+
+		Intent intent = getIntent();
+		int choice2 = intent.getIntExtra("choice2", -1);
+		if (choice2 == 1) {
+			tvServerIP.setVisibility(View.GONE);
+			tvSelfIP.setVisibility(View.GONE);
+			tvServerIpAddress.setVisibility(View.GONE);
+			tvSelfIpAddress.setVisibility(View.GONE);
+		} else if (choice2 == 3) {
+			if (!wifiManager.isWifiEnabled()) {
+				tvServerIP.setVisibility(View.GONE);
+				tvSelfIP.setVisibility(View.GONE);
+				tvServerIpAddress.setVisibility(View.GONE);
+				tvSelfIpAddress.setVisibility(View.GONE);
+			}
+		}
+		tvServerIP.setText(Protocols
+				.convertIntIPtoStringIP(dhcpInfo.serverAddress));
+		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcpInfo.ipAddress));
 
 		encodedList = new ArrayList<String>();
 		selectedEncodedList = new ArrayList<String>();
 		actualEncodedList = new ArrayList<String>();
 		relativeEncodeList = new ArrayList<String>();
-		
+
 		customList = new ArrayList<CustomListItem>();
 		customAdapter = new ServerCustomListAdapter(this,
 				R.layout.listitem_layout, customList);
-		
+
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setAdapter(customAdapter);
 		lvMyFolders.setOnItemClickListener(this);
@@ -127,10 +141,9 @@ public class Server extends Activity implements OnItemClickListener {
 				.get(position)));
 		if (!((!file.isHidden()) && file.exists() && file.canRead()))
 			return;
-		if (file.isFile()) {
-//			displayToast("is file");
+		if (file.isFile())
 			return;
-		}
+
 		File[] subFiles = file.listFiles();
 		encodedList.clear();
 		customList.clear();
@@ -286,7 +299,8 @@ public class Server extends Activity implements OnItemClickListener {
 						for (String encode : actualEncodedList) {
 							File f = new File(
 									Protocols.getFilePathFromEncode(encode));
-							if (!((!f.isHidden()) && f.exists() && f.canRead()&&(f.length()!=0)))
+							if (!((!f.isHidden()) && f.exists() && f.canRead() && (f
+									.length() != 0)))
 								continue;
 							BufferedInputStream bis = new BufferedInputStream(
 									new FileInputStream(f));
@@ -297,6 +311,7 @@ public class Server extends Activity implements OnItemClickListener {
 						}
 						actualEncodedList.clear();
 						relativeEncodeList.clear();
+
 					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -361,9 +376,8 @@ public class Server extends Activity implements OnItemClickListener {
 		super.onOptionsItemSelected(item);
 
 		if (item.getItemId() == R.id.action_back) {
-			if (currentFolder.getAbsolutePath().equals("/storage")) {
+			if (currentFolder.getAbsolutePath().equals("/storage"))
 				return true;
-			}
 			String parent = currentFolder.getParent();
 			currentFolder = new File(parent);
 			File[] subFiles = currentFolder.listFiles();
@@ -389,8 +403,7 @@ public class Server extends Activity implements OnItemClickListener {
 
 		} else if (item.getItemId() == R.id.acttion_upload) {
 			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
-			displayToast("selected folders uploaded");
-//			displayToast(pathString);
+			displayToast("Folders uploaded");
 			return true;
 
 		} else if (item.getItemId() == R.id.action_refresh) {
@@ -398,10 +411,6 @@ public class Server extends Activity implements OnItemClickListener {
 			tvServerIP.setText(Protocols
 					.convertIntIPtoStringIP(dhcp.serverAddress));
 			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
-					+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
-					+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress)
-					+ ":" + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
 			selectedEncodedList.clear();
 			actualEncodedList.clear();
 			relativeEncodeList.clear();
@@ -418,8 +427,6 @@ public class Server extends Activity implements OnItemClickListener {
 				return;
 			selectedEncodedList.add(encodedList.get(pos));
 			customList.get(pos).setCheckedState(true);
-			Toast.makeText(getApplicationContext(), pos + " added",
-					Toast.LENGTH_SHORT).show();
 		}
 
 		else {
@@ -427,33 +434,14 @@ public class Server extends Activity implements OnItemClickListener {
 				return;
 			selectedEncodedList.remove(encodedList.get(pos));
 			customList.get(pos).setCheckedState(false);
-			Toast.makeText(getApplicationContext(), pos + " removed",
-					Toast.LENGTH_SHORT).show();
 		}
 	}
 
 	public void onBackPressed() {
-		new AlertDialog.Builder(Server.this)
-				.setCancelable(false)
-				.setIcon(R.drawable.icon_skynet)
-				.setTitle("Logout")
-				.setMessage("Would you like to exit ?")
-				.setPositiveButton("Yes",
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog,
-									int which) {								
-								finish(); // Call finish here.
-							}
-						})
-				.setNegativeButton("No", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						// user doesn't want to logout
-						Toast.makeText(getApplicationContext(), "welcome back",
-								Toast.LENGTH_LONG).show();
-					}
-				}).show();
+		startActivity(new Intent(getApplicationContext(), MainActivity.class));
+		finish();
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		// TODO Auto-generated method stub

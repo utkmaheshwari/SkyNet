@@ -1,27 +1,115 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
     android:orientation="vertical"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity" 
-    android:weightSum="2">
+    android:textColor="@android:color/darker_gray"
+    tools:context=".MainActivity"
+    android:weightSum="3" >
 
-    <Button
-        android:id="@+id/btServer"
+    <LinearLayout
+        android:id="@+id/ll1"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:text="Server" />
+        android:layout_weight="2"
+        android:orientation="vertical" >
 
-    <Button
-        android:id="@+id/btClient"
+        <TextView
+            android:id="@+id/tv1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose what u wona do.... "
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="@android:color/darker_gray" />
+
+        <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" >
+
+            <RadioButton
+                android:id="@+id/rb1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Share files and folders"
+                android:textColor="@android:color/darker_gray" />
+
+            <RadioButton
+                android:id="@+id/rb2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Download files and folders"
+                android:textColor="@android:color/darker_gray" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll2"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:text="Client" />
-   
+        android:layout_weight="1" 
+        android:orientation="vertical"
+ 		android:visibility="invisible">
+ 
+
+        <TextView
+            android:id="@+id/tv2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose how u wona do....."
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="@android:color/darker_gray" />
+
+        <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+>
+
+            <RadioButton
+                android:id="@+id/rb3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create ur own hotspot"
+                android:textColor="@android:color/darker_gray" />
+
+            <RadioButton
+                android:id="@+id/rb4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connect to a 3rd party network"
+                android:textColor="@android:color/darker_gray" />
+
+            <RadioButton
+                android:id="@+id/rb5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="already connected"
+                android:textColor="@android:color/darker_gray" />
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/bt1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            android:textColor="@android:color/darker_gray" />
+        <Button
+            android:id="@+id/bt2"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Start connection process"
+            android:textColor="@android:color/darker_gray" />
+        
+        <Button
+            android:id="@+id/bt3"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Lets get started"
+            android:textColor="@android:color/darker_gray" />
+    </LinearLayout>
+
 </LinearLayout>

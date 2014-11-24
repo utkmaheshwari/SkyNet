@@ -16,13 +16,11 @@ import java.util.ArrayList;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.net.DhcpInfo;
@@ -51,9 +49,12 @@ public class Client extends Activity implements OnClickListener,
 		OnItemClickListener {
 
 	WifiManager wifiManager;
+	DhcpInfo dhcpInfo;
 	TextView tvServerIP, tvSelfIP;
 	EditText etIP;
 	ImageButton ibConnect;
+	String serverIP;
+	int choice2 = -1;
 	private Socket clientSocket = null;
 	private InputStream is = null;
 	private OutputStream os = null;
@@ -79,18 +80,32 @@ public class Client extends Activity implements OnClickListener,
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.client_layout);
+		wifiPeriferalInitialization();
 		UIInitialization();
-		WifiPeriferalInitialization();
 	}
 
 	public void UIInitialization() {
 		tvServerIP = (TextView) findViewById(R.id.tvServerIP);
 		tvSelfIP = (TextView) findViewById(R.id.tvSelfIP);
+		serverIP = Protocols.convertIntIPtoStringIP(dhcpInfo.serverAddress);
+		tvServerIP.setText(Protocols
+				.convertIntIPtoStringIP(dhcpInfo.serverAddress));
+		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcpInfo.ipAddress));
+		etIP = (EditText) findViewById(R.id.etIP);
+
+		Intent intent = getIntent();
+		choice2 = intent.getIntExtra("choice2", -1);
+		if (choice2 == 1) {
+			etIP.setVisibility(View.GONE);
+		} else if (choice2 == 3) {
+			if (false/* connected to 3rd party network */)
+			{
+				etIP.setVisibility(View.GONE);
+			}
+		}
 
 		ibConnect = (ImageButton) findViewById(R.id.ibConnect);
 		ibConnect.setOnClickListener(this);
-
-		etIP = (EditText) findViewById(R.id.etIP);
 
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setOnItemClickListener(this);
@@ -105,19 +120,15 @@ public class Client extends Activity implements OnClickListener,
 		lvMyFolders.setAdapter(customAdapter);
 	}
 
-	public void WifiPeriferalInitialization() {
+	public void wifiPeriferalInitialization() {
 		wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		final DhcpInfo dhcp = wifiManager.getDhcpInfo();
+		dhcpInfo = wifiManager.getDhcpInfo();
 		clientSocket = new Socket();
 
-		tvServerIP
-				.setText(Protocols.convertIntIPtoStringIP(dhcp.serverAddress));
-		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-
-		displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
-				+ Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
-				+ Protocols.convertIntIPtoStringIP(dhcp.serverAddress) + ":"
-				+ Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
+		// displayToast(Protocols.convertIntIPtoStringIP(dhcp.dns1) + ":"
+		// + Protocols.convertIntIPtoStringIP(dhcp.gateway) + ":"
+		// + Protocols.convertIntIPtoStringIP(dhcp.serverAddress) + ":"
+		// + Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
 
 		// //////////////////to prevent crash at on destroy....../////////
 		try {
@@ -130,7 +141,6 @@ public class Client extends Activity implements OnClickListener,
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		// /////////...............................///////////////
 	}
 
 	public void displayToast(String msg) {
@@ -151,8 +161,17 @@ public class Client extends Activity implements OnClickListener,
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
 		if (v.getId() == R.id.ibConnect) {
-			new ConnectClientToServer().execute(etIP.getText().toString()
-					.trim());
+			if (choice2 == 2) {
+				new ConnectClientToServer().execute(etIP.getText().toString()
+						.trim());
+			} else if (choice2 == 3) {
+				if (false/* connected to 3rd party network */) {
+					new ConnectClientToServer().execute(etIP.getText()
+							.toString().trim());
+				}
+			} else {
+				new ConnectClientToServer().execute(serverIP);
+			}
 		}
 	}
 
@@ -169,8 +188,6 @@ public class Client extends Activity implements OnClickListener,
 				return;
 			selectedEncodedList.add(encodedList.get(pos));
 			customList.get(pos).setCheckedState(true);
-			// Toast.makeText(getApplicationContext(), pos + " added",
-			// Toast.LENGTH_SHORT).show();
 		}
 
 		else {
@@ -178,8 +195,6 @@ public class Client extends Activity implements OnClickListener,
 				return;
 			selectedEncodedList.remove(encodedList.get(pos));
 			customList.get(pos).setCheckedState(false);
-			// Toast.makeText(getApplicationContext(), pos + " removed",
-			// Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -275,12 +290,12 @@ public class Client extends Activity implements OnClickListener,
 					originalEncodeList.add(path);
 					if (Protocols.checkFile(path))
 						customList.add(new CustomListItem(
-								R.drawable.ic_action_view_as_list, Protocols
-										.getFileNameFromEncode(path), false));
+								R.drawable.ic_action_view_as_list_light,
+								Protocols.getFileNameFromEncode(path), false));
 					else
 						customList.add(new CustomListItem(
-								R.drawable.ic_action_collection, Protocols
-										.getFileNameFromEncode(path), false));
+								R.drawable.ic_action_collection_light,
+								Protocols.getFileNameFromEncode(path), false));
 				}
 				currentFolderPath = Protocols.IS_NULL;
 				return true;
@@ -295,10 +310,9 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result) {
-				// displayToast("folder list fetched");
+			if (result) 
 				customAdapter.notifyDataSetChanged();
-			} else
+			else
 				displayToast("unable to fetch list");
 		}
 
@@ -341,16 +355,14 @@ public class Client extends Activity implements OnClickListener,
 						encodedList.add(path);
 						if (Protocols.checkFile(path))
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_view_as_list,
+									R.drawable.ic_action_view_as_list_light,
 									Protocols.getFileNameFromEncode(path),
 									false));
 						else
-							customList
-									.add(new CustomListItem(
-											R.drawable.ic_action_collection,
-											Protocols
-													.getFileNameFromEncode(path),
-											false));
+							customList.add(new CustomListItem(
+									R.drawable.ic_action_collection_light,
+									Protocols.getFileNameFromEncode(path),
+									false));
 					}
 					return true;
 				}
@@ -365,10 +377,9 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result) {
-				// displayToast("folder list fetched");
+			if (result) 
 				customAdapter.notifyDataSetChanged();
-			} else
+			else
 				displayToast("unable to fetch list");
 		}
 
@@ -410,16 +421,14 @@ public class Client extends Activity implements OnClickListener,
 						encodedList.add(path);
 						if (Protocols.checkFile(path))
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_view_as_list,
+									R.drawable.ic_action_view_as_list_light,
 									Protocols.getFileNameFromEncode(path),
 									false));
 						else
-							customList
-									.add(new CustomListItem(
-											R.drawable.ic_action_collection,
-											Protocols
-													.getFileNameFromEncode(path),
-											false));
+							customList.add(new CustomListItem(
+									R.drawable.ic_action_collection_light,
+									Protocols.getFileNameFromEncode(path),
+									false));
 					}
 					currentFolderPath = (long) 0
 							+ Protocols.getParentPathFromEncode(paths[0]);
@@ -436,10 +445,9 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPostExecute(Boolean result) {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
-			if (result) {
-				// displayToast("folder list fetched");
+			if (result) 
 				customAdapter.notifyDataSetChanged();
-			} else
+			else
 				displayToast("unable to fetch list");
 		}
 
@@ -507,7 +515,6 @@ public class Client extends Activity implements OnClickListener,
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
-				// publishProgress("PREPARING FOR DOWNLOAD");
 
 				File mainFolder = new File(
 						Environment.getExternalStorageDirectory() + "/"
@@ -516,7 +523,7 @@ public class Client extends Activity implements OnClickListener,
 					mainFolder.mkdirs();
 
 				response = dis.readUTF();
-				// publishProgress(response);
+				
 				final String[] encodes = Protocols
 						.splitBySubSeperator(response);
 				for (String encode : encodes) {
@@ -533,10 +540,8 @@ public class Client extends Activity implements OnClickListener,
 					return false;
 				dos.writeUTF(request);
 				dos.flush();
-				
-				// ***********************************************
+
 				progressDialog.setMax(encodes.length);
-				// ************************************
 
 				int x = 1;
 				for (String encode : encodes) {
@@ -585,7 +590,6 @@ public class Client extends Activity implements OnClickListener,
 			super.onPostExecute(result);
 			// progressDialog.cancel();
 			nm.cancel(1);
-			// uncheckAllChildrenCascade(lvMyFolders);
 			nb = new NotificationCompat.Builder(getApplicationContext());
 			nb.setContentIntent(pi)
 					.setLargeIcon(
@@ -634,16 +638,14 @@ public class Client extends Activity implements OnClickListener,
 					for (String path : originalEncodeList) {
 						if (Protocols.checkFile(path))
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_view_as_list,
+									R.drawable.ic_action_view_as_list_light,
 									Protocols.getFileNameFromEncode(path),
 									false));
 						else
-							customList
-									.add(new CustomListItem(
-											R.drawable.ic_action_collection,
-											Protocols
-													.getFileNameFromEncode(path),
-											false));
+							customList.add(new CustomListItem(
+									R.drawable.ic_action_collection_light,
+									Protocols.getFileNameFromEncode(path),
+									false));
 						encodedList.add(path);
 					}
 					currentFolderPath = Protocols.IS_NULL;
@@ -651,9 +653,7 @@ public class Client extends Activity implements OnClickListener,
 					return true;
 				}
 			}
-			// .....................................................................
-			// .....................................................................
-			// .....................................................................
+			
 			new GetParentFolder().execute(currentFolderPath);
 			return true;
 		}
@@ -683,7 +683,7 @@ public class Client extends Activity implements OnClickListener,
 			selectedEncodedList.clear();
 			originalEncodeList.clear();
 			customAdapter.notifyDataSetChanged();
-			// /////////////////////////////////////////////
+
 			try {
 				if (clientSocket.isInputShutdown()
 						| clientSocket.isOutputShutdown()
@@ -702,7 +702,6 @@ public class Client extends Activity implements OnClickListener,
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 			return true;
 		}
 		return false;
@@ -720,24 +719,8 @@ public class Client extends Activity implements OnClickListener,
 	}
 
 	public void onBackPressed() {
-		new AlertDialog.Builder(Client.this)
-				.setCancelable(false)
-				.setIcon(R.drawable.icon_skynet)
-				.setTitle("Logout")
-				.setMessage("Would you like to exit ?")
-				.setPositiveButton("Yes",
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog,
-									int which) {
-								finish(); // Call finish here.
-							}
-						})
-				.setNegativeButton("No", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						// user doesn't want to logout
-						displayToast("welcome back");
-					}
-				}).show();
+		startActivity(new Intent(getApplicationContext(), MainActivity.class));
+		finish();
 	}
 
 	@Override
