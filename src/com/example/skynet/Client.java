@@ -290,11 +290,11 @@ public class Client extends Activity implements OnClickListener,
 					originalEncodeList.add(path);
 					if (Protocols.checkFile(path))
 						customList.add(new CustomListItem(
-								R.drawable.ic_action_view_as_list_light,
+								R.drawable.ic_action_view_as_list,
 								Protocols.getFileNameFromEncode(path), false));
 					else
 						customList.add(new CustomListItem(
-								R.drawable.ic_action_collection_light,
+								R.drawable.ic_action_collection,
 								Protocols.getFileNameFromEncode(path), false));
 				}
 				currentFolderPath = Protocols.IS_NULL;
@@ -355,12 +355,12 @@ public class Client extends Activity implements OnClickListener,
 						encodedList.add(path);
 						if (Protocols.checkFile(path))
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_view_as_list_light,
+									R.drawable.ic_action_view_as_list,
 									Protocols.getFileNameFromEncode(path),
 									false));
 						else
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_collection_light,
+									R.drawable.ic_action_collection,
 									Protocols.getFileNameFromEncode(path),
 									false));
 					}
@@ -421,12 +421,12 @@ public class Client extends Activity implements OnClickListener,
 						encodedList.add(path);
 						if (Protocols.checkFile(path))
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_view_as_list_light,
+									R.drawable.ic_action_view_as_list,
 									Protocols.getFileNameFromEncode(path),
 									false));
 						else
 							customList.add(new CustomListItem(
-									R.drawable.ic_action_collection_light,
+									R.drawable.ic_action_collection,
 									Protocols.getFileNameFromEncode(path),
 									false));
 					}
