@@ -12,11 +12,14 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -42,11 +45,13 @@ public class Server extends Activity implements OnItemClickListener {
 	private static final int PORTNUMBER = 9999;
 	private String response = "", request = "";
 	private String pathString = "";
-
+	private SharedPreferences selectedFoldersPrefernces;
+	private SharedPreferences.Editor preferenceEditor;
 	private ListView lvMyFolders;
-	private ArrayList<CustomListItem> customList;
-	private ArrayList<String> encodedList, selectedEncodedList,
-			actualEncodedList, relativeEncodeList;
+	private ArrayList<CustomListItem> displayList;
+	private ArrayList<String> currentDirectoryEncodeList,
+			selectedFoldersEncodedList, sharedFoldersActualEncodedList,
+			sharedFoldersRelativeEncodeList;
 	private ServerCustomListAdapter customAdapter;
 	private File currentFolder = null;
 
@@ -91,14 +96,23 @@ public class Server extends Activity implements OnItemClickListener {
 				.convertIntIPtoStringIP(dhcpInfo.serverAddress));
 		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcpInfo.ipAddress));
 
-		encodedList = new ArrayList<String>();
-		selectedEncodedList = new ArrayList<String>();
-		actualEncodedList = new ArrayList<String>();
-		relativeEncodeList = new ArrayList<String>();
+		currentDirectoryEncodeList = new ArrayList<String>();
+		selectedFoldersEncodedList = new ArrayList<String>();
+		sharedFoldersActualEncodedList = new ArrayList<String>();
+		sharedFoldersRelativeEncodeList = new ArrayList<String>();
 
-		customList = new ArrayList<CustomListItem>();
+		displayList = new ArrayList<CustomListItem>();
 		customAdapter = new ServerCustomListAdapter(this,
-				R.layout.listitem_layout, customList);
+				R.layout.listitem_layout, displayList);
+
+		selectedFoldersPrefernces = getSharedPreferences("skynet", MODE_PRIVATE);
+		preferenceEditor = selectedFoldersPrefernces.edit();
+		selectedFoldersEncodedList = new ArrayList<String>(
+				(Collection<? extends String>) selectedFoldersPrefernces
+						.getAll().values());
+
+		Toast.makeText(getApplicationContext(),selectedFoldersEncodedList.toString(), Toast.LENGTH_LONG).show();
+		pathString = Protocols.clubBySubSeperator(selectedFoldersEncodedList);
 
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setAdapter(customAdapter);
@@ -108,26 +122,27 @@ public class Server extends Activity implements OnItemClickListener {
 				.getExternalStorageState())) {
 			File externalStorage = Environment.getExternalStorageDirectory();
 			File[] subFiles = externalStorage.listFiles();
-			customList.clear();
-			encodedList.clear();
+			displayList.clear();
+			currentDirectoryEncodeList.clear();
 
 			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
 					if (f.isFile())
-						customList.add(new CustomListItem(
+						displayList.add(new CustomListItem(
 								R.drawable.ic_action_view_as_list, f.getName(),
 								false));
 					else if (f.isDirectory())
-						customList.add(new CustomListItem(
+						displayList.add(new CustomListItem(
 								R.drawable.ic_action_collection, f.getName(),
 								false));
-					encodedList.add(Protocols.createListEncodeOfFile(f));
+					currentDirectoryEncodeList.add(Protocols
+							.createListEncodeOfFile(f));
 				}
 			}
 			currentFolder = externalStorage;
 		} else {
-			encodedList.clear();
-			customList.clear();
+			currentDirectoryEncodeList.clear();
+			displayList.clear();
 		}
 		customAdapter.notifyDataSetChanged();
 	}
@@ -137,28 +152,30 @@ public class Server extends Activity implements OnItemClickListener {
 			long arg3) {
 		// TODO Auto-generated method stub
 
-		File file = new File(Protocols.getFilePathFromEncode(encodedList
-				.get(position)));
+		File file = new File(
+				Protocols.getFilePathFromEncode(currentDirectoryEncodeList
+						.get(position)));
 		if (!((!file.isHidden()) && file.exists() && file.canRead()))
 			return;
 		if (file.isFile())
 			return;
 
 		File[] subFiles = file.listFiles();
-		encodedList.clear();
-		customList.clear();
+		currentDirectoryEncodeList.clear();
+		displayList.clear();
 		if (subFiles.length != 0) {
 			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
 					if (f.isFile())
-						customList.add(new CustomListItem(
+						displayList.add(new CustomListItem(
 								R.drawable.ic_action_view_as_list, f.getName(),
 								false));
 					else if (f.isDirectory())
-						customList.add(new CustomListItem(
+						displayList.add(new CustomListItem(
 								R.drawable.ic_action_collection, f.getName(),
 								false));
-					encodedList.add(Protocols.createListEncodeOfFile(f));
+					currentDirectoryEncodeList.add(Protocols
+							.createListEncodeOfFile(f));
 				}
 			}
 		}
@@ -167,8 +184,9 @@ public class Server extends Activity implements OnItemClickListener {
 	}
 
 	public void updateCheckboxes(int pos) {
-		if (selectedEncodedList.contains(encodedList.get(pos))) {
-			customList.get(pos).setCheckedState(true);
+		if (selectedFoldersEncodedList.contains(currentDirectoryEncodeList
+				.get(pos))) {
+			displayList.get(pos).setCheckedState(true);
 			customAdapter.notifyDataSetChanged();
 		}
 	}
@@ -292,11 +310,11 @@ public class Server extends Activity implements OnItemClickListener {
 									Protocols.getFilePathFromEncode(path));
 						}
 						response = Protocols
-								.clubBySubSeperator(relativeEncodeList);
+								.clubBySubSeperator(sharedFoldersRelativeEncodeList);
 						dos.writeUTF(response);
 						dos.flush();
 					} else if (code.equals(Protocols.START_DOWNLOAD)) {
-						for (String encode : actualEncodedList) {
+						for (String encode : sharedFoldersActualEncodedList) {
 							File f = new File(
 									Protocols.getFilePathFromEncode(encode));
 							if (!((!f.isHidden()) && f.exists() && f.canRead() && (f
@@ -309,8 +327,8 @@ public class Server extends Activity implements OnItemClickListener {
 							bos.flush();
 							bis.close();
 						}
-						actualEncodedList.clear();
-						relativeEncodeList.clear();
+						sharedFoldersActualEncodedList.clear();
+						sharedFoldersRelativeEncodeList.clear();
 
 					}
 				} catch (IOException e) {
@@ -346,9 +364,10 @@ public class Server extends Activity implements OnItemClickListener {
 			if (!((!f.isHidden()) && f.canRead() && f.exists()))
 				return;
 			if (f.isFile()) {
-				actualEncodedList.add(Protocols.createDownloadEncodeOfFile(f));
-				relativeEncodeList.add(Protocols.produceRelativePathEcodes(f,
-						filePath));
+				sharedFoldersActualEncodedList.add(Protocols
+						.createDownloadEncodeOfFile(f));
+				sharedFoldersRelativeEncodeList.add(Protocols
+						.produceRelativePathEcodes(f, filePath));
 			} else if (f.isDirectory()) {
 				File[] fileList = f.listFiles();
 				if (fileList.length == 0)
@@ -381,28 +400,30 @@ public class Server extends Activity implements OnItemClickListener {
 			String parent = currentFolder.getParent();
 			currentFolder = new File(parent);
 			File[] subFiles = currentFolder.listFiles();
-			customList.clear();
-			encodedList.clear();
+			displayList.clear();
+			currentDirectoryEncodeList.clear();
 			if (subFiles.length == 0)
 				return true;
 			for (File f : subFiles) {
 				if ((!f.isHidden()) && f.exists() && f.canRead()) {
 					if (f.isFile())
-						customList.add(new CustomListItem(
+						displayList.add(new CustomListItem(
 								R.drawable.ic_action_view_as_list, f.getName(),
 								false));
 					else if (f.isDirectory())
-						customList.add(new CustomListItem(
+						displayList.add(new CustomListItem(
 								R.drawable.ic_action_collection, f.getName(),
 								false));
-					encodedList.add(Protocols.createListEncodeOfFile(f));
+					currentDirectoryEncodeList.add(Protocols
+							.createListEncodeOfFile(f));
 				}
 			}
 			customAdapter.notifyDataSetChanged();
 			return true;
 
 		} else if (item.getItemId() == R.id.acttion_upload) {
-			pathString = Protocols.clubBySubSeperator(selectedEncodedList);
+			pathString = Protocols
+					.clubBySubSeperator(selectedFoldersEncodedList);
 			displayToast("Folders uploaded");
 			return true;
 
@@ -411,9 +432,9 @@ public class Server extends Activity implements OnItemClickListener {
 			tvServerIP.setText(Protocols
 					.convertIntIPtoStringIP(dhcp.serverAddress));
 			tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcp.ipAddress));
-			selectedEncodedList.clear();
-			actualEncodedList.clear();
-			relativeEncodeList.clear();
+			selectedFoldersEncodedList.clear();
+			sharedFoldersActualEncodedList.clear();
+			sharedFoldersRelativeEncodeList.clear();
 			displayToast("refresh complete");
 			customAdapter.notifyDataSetChanged();
 			return true;
@@ -423,18 +444,32 @@ public class Server extends Activity implements OnItemClickListener {
 
 	public void updateSelectedList(int pos, boolean add) {
 		if (add) {
-			if (selectedEncodedList.contains(encodedList.get(pos)))
+			if (selectedFoldersEncodedList.contains(currentDirectoryEncodeList
+					.get(pos)))
 				return;
-			selectedEncodedList.add(encodedList.get(pos));
-			customList.get(pos).setCheckedState(true);
+			selectedFoldersEncodedList.add(currentDirectoryEncodeList.get(pos));
+			preferenceEditor.putString(currentDirectoryEncodeList.get(pos),
+					currentDirectoryEncodeList.get(pos));
+			displayList.get(pos).setCheckedState(true);
 		}
 
 		else {
-			if (!(selectedEncodedList.contains(encodedList.get(pos))))
+			if (!(selectedFoldersEncodedList
+					.contains(currentDirectoryEncodeList.get(pos))))
 				return;
-			selectedEncodedList.remove(encodedList.get(pos));
-			customList.get(pos).setCheckedState(false);
+			selectedFoldersEncodedList.remove(currentDirectoryEncodeList
+					.get(pos));
+			preferenceEditor.remove(currentDirectoryEncodeList.get(pos));
+			displayList.get(pos).setCheckedState(false);
 		}
+		if (preferenceEditor.commit())
+			Toast.makeText(getApplicationContext(),
+					selectedFoldersPrefernces.toString(), Toast.LENGTH_LONG)
+					.show();
+		else
+			Toast.makeText(getApplicationContext(), "unable to commit",
+					Toast.LENGTH_LONG).show();
+
 	}
 
 	public void onBackPressed() {

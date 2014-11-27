@@ -3,22 +3,25 @@ package com.example.skynet;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.Toast;
 
 @SuppressLint("DefaultLocale")
 public class MainActivity extends Activity implements OnClickListener {
-	LinearLayout ll1, ll2;
+	LinearLayout ll1, ll2, ll3;
 	RadioButton rb1, rb2, rb3, rb4, rb5;
 	Button bt2, bt3;
 	int choice1 = 0, choice2 = 0;
+//	WifiManager wifiManager=(WifiManager)getSystemService(Context.WIFI_SERVICE);
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +29,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		setContentView(R.layout.activity_main);
 		ll1 = (LinearLayout) findViewById(R.id.ll1);
 		ll2 = (LinearLayout) findViewById(R.id.ll2);
+		ll3 = (LinearLayout) findViewById(R.id.ll3);
 		rb1 = (RadioButton) findViewById(R.id.rb1);
 		rb2 = (RadioButton) findViewById(R.id.rb2);
 		rb3 = (RadioButton) findViewById(R.id.rb3);
@@ -59,7 +63,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				.setNegativeButton("No", new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
 						// user doesn't want to logout
-						
+
 					}
 				}).show();
 	}
@@ -123,16 +127,22 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		case R.id.rb3: {
 			choice2 = 1;
+			bt2.setVisibility(View.VISIBLE);
+			ll3.setVisibility(View.VISIBLE);
 			break;
 		}
 
 		case R.id.rb4: {
 			choice2 = 2;
+			bt2.setVisibility(View.VISIBLE);
+			ll3.setVisibility(View.VISIBLE);
 			break;
 		}
 
 		case R.id.rb5: {
 			choice2 = 3;
+			ll3.setVisibility(View.VISIBLE);
+			bt2.setVisibility(View.INVISIBLE);
 			break;
 		}
 		}

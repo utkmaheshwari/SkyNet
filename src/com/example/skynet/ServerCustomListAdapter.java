@@ -18,14 +18,14 @@ public class ServerCustomListAdapter extends ArrayAdapter<CustomListItem> {
 	 * static class ViewHolder { TextView tv; ImageView iv; CheckBox cb; }
 	 */
 	Server context;
-	ArrayList<CustomListItem> customList;
+	ArrayList<CustomListItem> displayList;
 
 	public ServerCustomListAdapter(Server context, int resource,
-			ArrayList<CustomListItem> customList) {
-		super(context, resource, customList);
+			ArrayList<CustomListItem> displayList) {
+		super(context, resource, displayList);
 		// TODO Auto-generated constructor stub
 		this.context = context;
-		this.customList = customList;
+		this.displayList = displayList;
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class ServerCustomListAdapter extends ArrayAdapter<CustomListItem> {
 		 * 
 		 * context.updateCheckboxes(pos);
 		 * 
-		 * CustomListItem obj = customList.get(position);
+		 * CustomListItem obj = displayList.get(position);
 		 * viewHolder.tv.setText(obj.getName());
 		 * viewHolder.iv.setImageBitmap(BitmapFactory.decodeResource(
 		 * context.getResources(), obj.getImage()));
@@ -69,16 +69,16 @@ public class ServerCustomListAdapter extends ArrayAdapter<CustomListItem> {
 					false);
 		}
 		final CheckBox cb = (CheckBox) convertView.findViewById(R.id.cb);
-		context.updateCheckboxes(pos);
 		final ImageView iv = (ImageView) convertView.findViewById(R.id.iv);
 		final TextView tv = (TextView) convertView.findViewById(R.id.tv);
-
-		CustomListItem obj = customList.get(pos);
+		context.updateCheckboxes(pos);
+		
+		CustomListItem obj = displayList.get(pos);
 		tv.setText(obj.getName());
 		iv.setImageBitmap(BitmapFactory.decodeResource(context.getResources(),
 				obj.getImage()));
 		cb.setChecked(obj.getCheckedState());
-
+		
 		cb.setOnClickListener(new OnClickListener() {
 
 			@Override
