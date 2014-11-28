@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <SlidingDrawer
+        android:id="@+id/slidingDrawer1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:content="@+id/lvSelectedItems"
+        android:handle="@+id/handle" >
+
+        <ListView
+            android:id="@+id/lvSelectedItems"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
+        </ListView>
+
+        <Button
+            android:id="@+id/handle"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Handle" />
+    </SlidingDrawer>
+
+</LinearLayout>

@@ -6,7 +6,11 @@
         android:icon="@drawable/ic_action_back"
         android:showAsAction="always"
         android:title="back"/>
-   
+    <item
+        android:id="@+id/action_getlist"
+        android:icon="@drawable/ic_action_storage"
+        android:showAsAction="always"
+        android:title="get list"/>
     <item
         android:id="@+id/acttion_upload"
         android:icon="@drawable/ic_action_share"

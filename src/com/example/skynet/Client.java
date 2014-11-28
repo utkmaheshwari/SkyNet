@@ -476,7 +476,7 @@ public class Client extends Activity implements OnClickListener,
 		protected void onPreExecute() {
 			// TODO Auto-generated method stub
 			super.onPreExecute();
-
+			
 			nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			nm.cancel(1);
 			nb = new NotificationCompat.Builder(getApplicationContext());
@@ -617,6 +617,7 @@ public class Client extends Activity implements OnClickListener,
 				displayToast("downloading failed");
 			}
 			nm.notify(2, nb.build());
+			
 		}
 	}
 
@@ -648,10 +649,12 @@ public class Client extends Activity implements OnClickListener,
 									Protocols.getFileNameFromEncode(path),
 									false));
 						else
-							customList.add(new CustomListItem(
-									R.drawable.ic_action_collection,
-									Protocols.getFileNameFromEncode(path),
-									false));
+							customList
+									.add(new CustomListItem(
+											R.drawable.ic_action_collection,
+											Protocols
+													.getFileNameFromEncode(path),
+											false));
 						encodedList.add(path);
 					}
 					currentFolderPath = Protocols.IS_NULL;
@@ -667,6 +670,7 @@ public class Client extends Activity implements OnClickListener,
 		else if (item.getItemId() == R.id.action_download) {
 			if (selectedEncodedList.size() == 0)
 				return true;
+			uncheckAllChildrenCascade(lvMyFolders);
 			String pathString = Protocols
 					.clubBySubSeperator(selectedEncodedList);
 
@@ -716,6 +720,7 @@ public class Client extends Activity implements OnClickListener,
 			}
 		}
 	}
+
 
 	public void onBackPressed() {
 		finish();

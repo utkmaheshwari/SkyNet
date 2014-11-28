@@ -59,9 +59,11 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/ll1"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:descendantFocusability="blocksDescendants"
+        android:orientation="vertical"
         android:textColor="@android:color/darker_gray" >
 
         <ListView
@@ -71,6 +73,13 @@
             android:drawSelectorOnTop="false"
             android:fastScrollEnabled="true"
             android:smoothScrollbar="true" >
+        </ListView>
+
+        <ListView
+            android:id="@+id/lvSelectedItems"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:visibility="gone" >
         </ListView>
     </LinearLayout>
 
