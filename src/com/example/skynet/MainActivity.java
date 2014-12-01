@@ -3,10 +3,8 @@ package com.example.skynet;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -50,7 +48,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	public void onBackPressed() {
 		new AlertDialog.Builder(MainActivity.this)
 				.setCancelable(false)
-				.setIcon(R.drawable.icon_skynet)
+				.setIcon(R.drawable.ic_launcher)
 				.setTitle("Logout")
 				.setMessage("Would you like to exit ?")
 				.setPositiveButton("Yes",

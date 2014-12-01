@@ -116,10 +116,11 @@ public class Protocols {
 				dataString = dataString + Protocols.FOLDER
 						+ f.getAbsolutePath() + Protocols.SUB_SEPERATOR;
 			else if (f.isFile())
-				dataString = dataString + Protocols.FILE
-						+ f.getAbsolutePath() + Protocols.SUB_SEPERATOR;
+				dataString = dataString + Protocols.FILE + f.getAbsolutePath()
+						+ Protocols.SUB_SEPERATOR;
 		}
-		return dataString.substring(0, dataString.length() - 1);
+		return dataString.equals("") ? "" : dataString.substring(0,
+				dataString.length() - 1);
 	}
 
 	public static boolean checkFile(String encode) {
@@ -163,7 +164,7 @@ public class Protocols {
 				outputStream.flush();
 				fileSize -= len;
 			}
-			
+
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

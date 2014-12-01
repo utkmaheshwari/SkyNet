@@ -38,32 +38,35 @@ import android.widget.Toast;
 public class Server extends Activity implements OnItemClickListener {
 
 	TextView tvServerIP, tvSelfIP, tvServerIpAddress, tvSelfIpAddress;
+	private ListView lvMyFolders, lvSelectedFolders;
+	private ServerCustomListAdapter customAdapter;
+	private SelectedItemListAdapter selectedAdapter;
+
+	private ArrayList<CustomListItem> displayList, selectedDisplayList;
+	private ArrayList<String> currentDirectoryEncodeList,
+			selectedFoldersEncodedList, sharedFoldersActualEncodedList,
+			sharedFoldersRelativeEncodeList;
+
 	private WifiManager wifiManager;
 	private DhcpInfo dhcpInfo;
+
+	private SharedPreferences selectedFoldersPrefernces;
+	private SharedPreferences.Editor preferenceEditor;
+
+	private File currentFolder = null;
+
 	private static final String TAG = "folderShare";
 	private static final int PORTNUMBER = 9999;
 	private String response = "", request = "";
 	private String pathString = "";
-	private SharedPreferences selectedFoldersPrefernces;
-	private SharedPreferences.Editor preferenceEditor;
-	private ListView lvMyFolders, lvSelectedFolders;
-	private ArrayList<CustomListItem> displayList;
-	private ArrayList<String> currentDirectoryEncodeList,
-			selectedFoldersEncodedList, sharedFoldersActualEncodedList,
-			sharedFoldersRelativeEncodeList;
-	private SelectedItemListAdapter selectedAdapter;
-	private ArrayList<CustomListItem> selectedDisplayList;
-
-	private ServerCustomListAdapter customAdapter;
-	private File currentFolder = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.server_layout);
-		// startService(new Intent(Server.this,
-		// ListenForClientConnection.class));
+		// startService(new
+		// Intent(Server.this,ListenForClientConnection.class));
 		new Thread(new ListenForClientConnection()).start();
 		wifiPeriferalInitialization();
 		UIInitialization();
@@ -100,7 +103,7 @@ public class Server extends Activity implements OnItemClickListener {
 		tvServerIP.setText(Protocols
 				.convertIntIPtoStringIP(dhcpInfo.serverAddress));
 		tvSelfIP.setText(Protocols.convertIntIPtoStringIP(dhcpInfo.ipAddress));
-		//***************************************************************************************************
+		// ***************************************************************************************************
 		currentDirectoryEncodeList = new ArrayList<String>();
 		selectedFoldersEncodedList = new ArrayList<String>();
 		sharedFoldersActualEncodedList = new ArrayList<String>();
@@ -110,14 +113,14 @@ public class Server extends Activity implements OnItemClickListener {
 		selectedFoldersEncodedList = new ArrayList<String>(
 				(Collection<? extends String>) selectedFoldersPrefernces
 						.getAll().values());
-		//***************************************************************************************************
+		// ***************************************************************************************************
 		displayList = new ArrayList<CustomListItem>();
 		customAdapter = new ServerCustomListAdapter(this,
 				R.layout.listitem_layout, displayList);
 		lvMyFolders = (ListView) findViewById(R.id.lvMyFolders);
 		lvMyFolders.setAdapter(customAdapter);
 		lvMyFolders.setOnItemClickListener(this);
-		
+
 		selectedDisplayList = new ArrayList<CustomListItem>();
 		for (String s : selectedFoldersEncodedList)
 			selectedDisplayList
@@ -130,9 +133,9 @@ public class Server extends Activity implements OnItemClickListener {
 		lvSelectedFolders = (ListView) findViewById(R.id.lvSelectedItems);
 		lvSelectedFolders.setAdapter(selectedAdapter);
 		selectedAdapter.notifyDataSetChanged();
-		//**************************************************************************************************
+		// **************************************************************************************************
 		pathString = Protocols.clubBySubSeperator(selectedFoldersEncodedList);
-		//**************************************************************************************************
+		// **************************************************************************************************
 		if (Environment.MEDIA_MOUNTED.equals(Environment
 				.getExternalStorageState())) {
 			File externalStorage = Environment.getExternalStorageDirectory();
@@ -161,7 +164,7 @@ public class Server extends Activity implements OnItemClickListener {
 			displayList.clear();
 		}
 		customAdapter.notifyDataSetChanged();
-		//**************************************************************************************************
+		// **************************************************************************************************
 	}
 
 	@Override
@@ -422,23 +425,23 @@ public class Server extends Activity implements OnItemClickListener {
 				e.printStackTrace();
 			}
 		}
+	}
 
-		public void getFilesInFolders(File f, String filePath) {
+	public void getFilesInFolders(File f, String filePath) {
 
-			if (!((!f.isHidden()) && f.canRead() && f.exists() && (f.length() != 0)))
+		if (!((!f.isHidden()) && f.canRead() && f.exists() && (f.length() != 0)))
+			return;
+		if (f.isFile()) {
+			sharedFoldersActualEncodedList.add(Protocols
+					.createDownloadEncodeOfFile(f));
+			sharedFoldersRelativeEncodeList.add(Protocols
+					.produceRelativePathEcodes(f, filePath));
+		} else if (f.isDirectory()) {
+			File[] fileList = f.listFiles();
+			if (fileList.length == 0)
 				return;
-			if (f.isFile()) {
-				sharedFoldersActualEncodedList.add(Protocols
-						.createDownloadEncodeOfFile(f));
-				sharedFoldersRelativeEncodeList.add(Protocols
-						.produceRelativePathEcodes(f, filePath));
-			} else if (f.isDirectory()) {
-				File[] fileList = f.listFiles();
-				if (fileList.length == 0)
-					return;
-				for (File file : fileList)
-					getFilesInFolders(file, filePath);
-			}
+			for (File file : fileList)
+				getFilesInFolders(file, filePath);
 		}
 	}
 
@@ -488,6 +491,16 @@ public class Server extends Activity implements OnItemClickListener {
 		} else if (item.getItemId() == R.id.acttion_upload) {
 			pathString = Protocols
 					.clubBySubSeperator(selectedFoldersEncodedList);
+			selectedDisplayList.clear();
+			for (String s : selectedFoldersEncodedList)
+				selectedDisplayList
+						.add(new CustomListItem(
+								(s.substring(0, s.indexOf("/"))
+										.equals("folder")) ? R.drawable.ic_action_collection
+										: R.drawable.ic_action_view_as_list,
+								Protocols.getFilePathFromEncode(s), true));
+
+			selectedAdapter.notifyDataSetChanged();
 			displayToast("Folders uploaded");
 			return true;
 		} else if (item.getItemId() == R.id.action_getlist) {
@@ -495,17 +508,18 @@ public class Server extends Activity implements OnItemClickListener {
 				lvSelectedFolders.setVisibility(View.GONE);
 				lvMyFolders.setVisibility(View.VISIBLE);
 			} else {
-				selectedDisplayList.clear();
-				for (String s : selectedFoldersEncodedList)
-					selectedDisplayList
-							.add(new CustomListItem(
-									(s.substring(0, s.indexOf("/"))
-											.equals("folder")) ? R.drawable.ic_action_collection
-											: R.drawable.ic_action_view_as_list,
-									Protocols.getFilePathFromEncode(s), true));
 				lvMyFolders.setVisibility(View.GONE);
 				lvSelectedFolders.setVisibility(View.VISIBLE);
-				selectedAdapter.notifyDataSetChanged();
+				// selectedDisplayList.clear();
+				// for (String s : selectedFoldersEncodedList)
+				// selectedDisplayList
+				// .add(new CustomListItem(
+				// (s.substring(0, s.indexOf("/"))
+				// .equals("folder")) ? R.drawable.ic_action_collection
+				// : R.drawable.ic_action_view_as_list,
+				// Protocols.getFilePathFromEncode(s), true));
+				//
+				// selectedAdapter.notifyDataSetChanged();
 			}
 		} else if (item.getItemId() == R.id.action_refresh) {
 			final DhcpInfo dhcp = wifiManager.getDhcpInfo();
